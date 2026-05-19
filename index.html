@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ritual Clicker</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="game-shell">
+        <section class="ritual-stage" aria-label="Ritual arena">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Ritual Clicker</p>
+            <h1>Awaken the Circle</h1>
+          </div>
+          <button class="icon-button" id="resetButton" type="button" title="Reset run" aria-label="Reset run">
+            <span aria-hidden="true">↺</span>
+          </button>
+        </div>
+
+        <div class="resource-panel">
+          <div>
+            <span class="label">Essence</span>
+            <strong id="essence">0</strong>
+          </div>
+          <div>
+            <span class="label">Per click</span>
+            <strong id="perClick">1</strong>
+          </div>
+          <div>
+            <span class="label">Per second</span>
+            <strong id="perSecond">0</strong>
+          </div>
+        </div>
+
+        <button class="sigil" id="sigilButton" type="button" aria-label="Gather essence">
+          <img class="sigil-image" src="assets/ritual-sigil.jpg" alt="">
+        </button>
+
+        <div class="ritual-meter" aria-label="Ritual meter">
+          <div class="meter-label">
+            <span>Ritual Focus</span>
+            <strong id="focusText">0%</strong>
+          </div>
+          <div class="meter-track">
+            <span id="focusFill"></span>
+          </div>
+        </div>
+
+        <button class="primary-action" id="invokeButton" type="button" disabled>
+          Invoke the Rite
+        </button>
+      </section>
+
+      <aside class="shop-panel" aria-label="Ritual upgrades">
+        <section class="login-panel" aria-label="Account login">
+          <div>
+            <h2>Account</h2>
+            <p id="accountStatus">Not connected</p>
+          </div>
+          <div class="login-actions">
+            <button class="login-button" id="xLoginButton" type="button">
+              <span aria-hidden="true">X</span>
+              Login with X
+            </button>
+            <button class="login-button" id="metaMaskButton" type="button">
+              <span aria-hidden="true">M</span>
+              MetaMask
+            </button>
+            <button class="login-button logout-button" id="logoutButton" type="button" hidden>
+              Logout
+            </button>
+          </div>
+        </section>
+
+        <div class="panel-heading">
+          <h2>Ritual Tools</h2>
+          <p id="statusText">Tap the sigil to start the circle.</p>
+        </div>
+
+        <div class="shop-list" id="shopList"></div>
+
+        <section class="leaderboard" aria-label="Leaderboard">
+          <div class="leaderboard-heading">
+            <h2>Leaderboard</h2>
+            <span id="playerRank">Rank #1</span>
+          </div>
+          <ol id="leaderboardList"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <template id="upgradeTemplate">
+      <button class="upgrade-card" type="button">
+        <span class="upgrade-icon" aria-hidden="true"></span>
+        <span class="upgrade-copy">
+          <strong class="upgrade-name"></strong>
+          <span class="upgrade-desc"></span>
+          <span class="upgrade-meta"></span>
+        </span>
+        <span class="upgrade-cost"></span>
+      </button>
+    </template>
+
+    <script src="game.js"></script>
+  </body>
+</html>
