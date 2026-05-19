@@ -4,7 +4,7 @@ const upgrades = [
   {
     id: "candle",
     icon: "♨",
-    name: "Ember Candle",
+    name: "Bitty",
     desc: "+1 essence per click",
     baseCost: 15,
     scale: 1.45,
@@ -15,7 +15,7 @@ const upgrades = [
   {
     id: "chant",
     icon: "◌",
-    name: "Chant Circle",
+    name: "Ritty",
     desc: "+2 essence per second",
     baseCost: 50,
     scale: 1.55,
@@ -26,7 +26,7 @@ const upgrades = [
   {
     id: "relic",
     icon: "✧",
-    name: "Dusk Relic",
+    name: "Ritualist",
     desc: "+5 essence per click",
     baseCost: 160,
     scale: 1.62,
@@ -37,7 +37,7 @@ const upgrades = [
   {
     id: "altar",
     icon: "▣",
-    name: "Moss Altar",
+    name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
     scale: 1.7,
@@ -48,7 +48,7 @@ const upgrades = [
   {
     id: "mirror",
     icon: "◇",
-    name: "Cracked Mirror",
+    name: "Zealot",
     desc: "Invocation grants 35% more",
     baseCost: 1400,
     scale: 1.85,

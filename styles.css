@@ -196,14 +196,8 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  animation: sigilSpin 14s linear infinite;
   user-select: none;
   pointer-events: none;
-}
-
-.sigil:hover .sigil-image {
-  animation-duration: 8s;
 }
 
 .ritual-meter {
@@ -464,12 +458,6 @@ h2 {
   to {
     opacity: 0;
     transform: translateY(-58px);
-  }
-}
-
-@keyframes sigilSpin {
-  to {
-    transform: rotate(360deg);
   }
 }
 
