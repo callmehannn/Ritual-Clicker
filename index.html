@@ -174,20 +174,71 @@ h2 {
   gap: 12px;
 }
 
+.level-title-row {
+  padding: 12px 14px;
+  border: 1px solid rgba(64, 255, 175, 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.13), rgba(7, 115, 69, 0.25)),
+    rgba(0, 0, 0, 0.52);
+  box-shadow: inset 0 0 22px rgba(64, 255, 175, 0.07);
+}
+
 .level-title-row strong {
   overflow-wrap: anywhere;
   color: var(--ink);
-  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.65rem, 5.4vw, 3.4rem);
   line-height: 1;
+  text-shadow:
+    0 0 14px color-mix(in srgb, var(--aura) 60%, transparent),
+    0 0 34px color-mix(in srgb, var(--aura) 30%, transparent);
+}
+
+.level-title-row .label {
+  margin-bottom: 0;
+  color: var(--bright);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .level-progress-track {
   height: 14px;
   overflow: hidden;
-  margin: 12px 0 8px;
+  margin: 6px 0 8px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.78);
+}
+
+.level-progress-readout {
+  position: relative;
+  height: 28px;
+  margin-top: 8px;
+}
+
+.level-progress-readout strong {
+  position: absolute;
+  left: var(--level-progress, 0%);
+  bottom: 0;
+  min-width: max-content;
+  transform: translateX(-50%);
+  color: var(--bright);
+  font-size: clamp(1rem, 3.4vw, 1.4rem);
+  line-height: 1;
+}
+
+.level-progress-readout strong::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 4px auto 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--bright);
 }
 
 .level-progress-track span {
@@ -202,11 +253,6 @@ h2 {
 .level-progress-meta {
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-.level-progress-meta strong {
-  color: var(--bright);
-  font-size: 0.82rem;
 }
 
 .label {
@@ -500,7 +546,8 @@ h2 {
 }
 
 .leaderboard,
-.achievements {
+.achievements,
+.daily-panel {
   display: grid;
   gap: 9px;
   padding-top: 12px;
@@ -595,6 +642,99 @@ h2 {
 
 .leaderboard strong {
   color: var(--bright);
+}
+
+.daily-calendar-card {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.daily-calendar-face {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 10px;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(64, 255, 175, 0.14), rgba(0, 0, 0, 0.36));
+}
+
+.daily-month,
+.daily-weekday {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.daily-day {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.15rem;
+  line-height: 0.9;
+}
+
+.daily-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.daily-week span {
+  height: 13px;
+  border: 1px solid rgba(64, 255, 175, 0.18);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 0.48rem;
+  line-height: 11px;
+  text-align: center;
+}
+
+.daily-week span.is-today {
+  border-color: var(--bright);
+  background: var(--bright);
+  color: #02120b;
+  font-weight: 900;
+}
+
+.daily-calendar-info {
+  display: grid;
+  gap: 8px;
+}
+
+.daily-stat {
+  display: grid;
+  gap: 5px;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid rgba(64, 255, 175, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.daily-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.daily-stat strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.daily-claim-button {
+  grid-column: 1 / -1;
+}
+
+.daily-claim-button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .mobile-tab-panel {
@@ -748,7 +888,8 @@ h2 {
   .mobile-tab-panel,
   .level-guide,
   .achievements,
-  .leaderboard {
+  .leaderboard,
+  .daily-panel {
     order: 1;
     width: 100%;
   }
@@ -767,7 +908,7 @@ h2 {
     z-index: 20;
     order: 2;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     width: 100%;
     border: 1px solid var(--line);
@@ -817,6 +958,10 @@ h2 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .daily-calendar-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+
   .sigil {
     width: min(82vw, 340px, 38vh);
   }
@@ -854,12 +999,14 @@ h2 {
               <span class="label">Title</span>
               <strong id="currentLevelTitle">Bitty</strong>
             </div>
+            <div class="level-progress-readout">
+              <strong id="totalClicks">0</strong>
+            </div>
             <div class="level-progress-track" aria-label="Total click progress">
               <span id="levelProgressFill"></span>
             </div>
             <div class="level-progress-meta">
               <span id="levelProgressStart">0</span>
-              <strong id="totalClicks">0 / 100 clicks</strong>
               <span id="levelProgressEnd">100</span>
             </div>
           </div>
@@ -902,6 +1049,34 @@ h2 {
             <button class="login-button logout-button" id="logoutButton" type="button" hidden>
               Logout
             </button>
+          </div>
+        </section>
+
+        <section class="daily-panel mobile-tab-panel" data-tab-panel="daily" aria-label="Daily login">
+          <div class="section-heading">
+            <h2>Daily Login</h2>
+            <span id="dailyStatus">Ready</span>
+          </div>
+          <div class="daily-calendar-card">
+            <div class="daily-calendar-face">
+              <span class="daily-month" id="dailyMonth">May</span>
+              <strong class="daily-day" id="dailyDay">21</strong>
+              <span class="daily-weekday" id="dailyWeekday">Thursday</span>
+              <div class="daily-week" id="dailyWeek" aria-label="Current week"></div>
+            </div>
+            <div class="daily-calendar-info">
+              <div class="daily-stat">
+                <span class="daily-label">Streak</span>
+                <strong id="dailyStreak">0 days</strong>
+              </div>
+              <div class="daily-stat">
+                <span class="daily-label">Reward</span>
+                <strong id="dailyReward">250 essence</strong>
+              </div>
+              <button class="login-button daily-claim-button" id="dailyClaimButton" type="button">
+                Claim Daily Essence
+              </button>
+            </div>
           </div>
         </section>
 
@@ -952,6 +1127,7 @@ h2 {
       </aside>
       <nav class="mobile-nav" aria-label="Mobile sections">
         <button class="is-active" type="button" data-tab-target="upgrade">Upgrade</button>
+        <button type="button" data-tab-target="daily">Daily</button>
         <button type="button" data-tab-target="achievements">Achievements</button>
         <button type="button" data-tab-target="leaderboard">Leaderboard</button>
       </nav>
@@ -1109,6 +1285,14 @@ const nodes = {
   metaMaskButton: document.querySelector("#metaMaskButton"),
   ritualTestnetButton: document.querySelector("#ritualTestnetButton"),
   logoutButton: document.querySelector("#logoutButton"),
+  dailyStatus: document.querySelector("#dailyStatus"),
+  dailyMonth: document.querySelector("#dailyMonth"),
+  dailyDay: document.querySelector("#dailyDay"),
+  dailyWeekday: document.querySelector("#dailyWeekday"),
+  dailyWeek: document.querySelector("#dailyWeek"),
+  dailyStreak: document.querySelector("#dailyStreak"),
+  dailyReward: document.querySelector("#dailyReward"),
+  dailyClaimButton: document.querySelector("#dailyClaimButton"),
   shopList: document.querySelector("#shopList"),
   statusText: document.querySelector("#statusText"),
   achievementsList: document.querySelector("#achievementsList"),
@@ -1241,6 +1425,22 @@ nodes.logoutButton.addEventListener("click", () => {
   render();
 });
 
+nodes.dailyClaimButton.addEventListener("click", () => {
+  if (hasClaimedDailyToday()) return;
+
+  const today = getDateKey();
+  const yesterday = getDateKey(-1);
+  const nextStreak = state.dailyLastClaimDate === yesterday ? state.dailyStreak + 1 : 1;
+  const reward = getDailyReward(nextStreak);
+
+  state.dailyLastClaimDate = today;
+  state.dailyStreak = nextStreak;
+  state.essence += reward;
+  state.totalEarned += reward;
+  addLog(`Daily Login claimed. Essence +${format(reward)}.`);
+  render();
+});
+
 nodes.mobileNavButtons.forEach((button) => {
   button.addEventListener("click", () => {
     setMobileTab(button.dataset.tabTarget);
@@ -1292,6 +1492,7 @@ function render() {
   nodes.invokeButton.disabled = state.focus < 100;
   nodes.statusText.textContent = getStatusText();
   renderAccount();
+  renderDailyLogin();
   checkAchievements();
   renderAchievements();
   renderLeaderboard();
@@ -1348,6 +1549,34 @@ function renderAccount() {
   nodes.metaMaskButton.hidden = true;
   nodes.ritualTestnetButton.hidden = true;
   nodes.logoutButton.hidden = false;
+}
+
+function renderDailyLogin() {
+  const today = getDateKey();
+  const claimed = hasClaimedDailyToday();
+  const nextStreak = claimed ? state.dailyStreak : state.dailyLastClaimDate === getDateKey(-1) ? state.dailyStreak + 1 : 1;
+  const reward = getDailyReward(nextStreak);
+  const todayDate = new Date();
+
+  nodes.dailyStatus.textContent = claimed ? "Claimed" : "Ready";
+  nodes.dailyMonth.textContent = new Intl.DateTimeFormat("en-US", { month: "short" }).format(todayDate);
+  nodes.dailyDay.textContent = String(todayDate.getDate());
+  nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
+  nodes.dailyWeek.innerHTML = getWeekDays(todayDate)
+    .map((date) => `<span class="${date.toDateString() === todayDate.toDateString() ? "is-today" : ""}">${date.getDate()}</span>`)
+    .join("");
+  nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
+  nodes.dailyReward.textContent = `${format(reward)} essence`;
+  nodes.dailyClaimButton.disabled = claimed;
+  nodes.dailyClaimButton.textContent = claimed ? "Come Back Tomorrow" : "Claim Daily Essence";
+}
+
+function hasClaimedDailyToday() {
+  return state.dailyLastClaimDate === getDateKey();
+}
+
+function getDailyReward(streak) {
+  return Math.min(500, 250 + Math.max(0, streak - 1) * 50);
 }
 
 async function switchOrAddRitualTestnet() {
@@ -1437,16 +1666,16 @@ function renderLevelProgress() {
   const end = nextLevel ? nextLevel.clicks : currentLevel.clicks;
   const range = Math.max(1, end - start);
   const progress = nextLevel ? Math.min(100, ((state.totalClicks - start) / range) * 100) : 100;
+  const labelProgress = Math.min(96, Math.max(4, progress));
 
   nodes.currentLevelTitle.textContent = currentLevel.title;
   nodes.sigilButton.style.setProperty("--aura", aura.aura);
   nodes.sigilButton.style.setProperty("--aura-soft", aura.soft);
   nodes.levelProgressFill.style.width = `${progress}%`;
+  nodes.totalClicks.parentElement.style.setProperty("--level-progress", `${labelProgress}%`);
   nodes.levelProgressStart.textContent = format(start);
   nodes.levelProgressEnd.textContent = nextLevel ? format(end) : "Max";
-  nodes.totalClicks.textContent = nextLevel
-    ? `${format(state.totalClicks)} / ${format(end)} clicks`
-    : `${format(state.totalClicks)} clicks`;
+  nodes.totalClicks.textContent = format(state.totalClicks);
 }
 
 function getCurrentLevel() {
@@ -1508,6 +1737,35 @@ function shortenAddress(address) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function getDateKey(offsetDays = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function getWeekDays(date) {
+  const start = new Date(date);
+  start.setDate(date.getDate() - date.getDay());
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(start);
+    day.setDate(start.getDate() + index);
+    return day;
+  });
+}
+
 function defaultState() {
   return {
     essence: 0,
@@ -1525,6 +1783,8 @@ function defaultState() {
     achievements: {},
     playSeconds: 0,
     openedDays: [],
+    dailyLastClaimDate: "",
+    dailyStreak: 0,
     ritualTestnetConnected: false,
     log: [],
   };
