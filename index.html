@@ -32,10 +32,12 @@ body {
   color: var(--ink);
   background: #000;
   background-attachment: fixed;
+  touch-action: manipulation;
 }
 
 button {
   font: inherit;
+  touch-action: manipulation;
 }
 
 [hidden] {
@@ -239,6 +241,9 @@ h2 {
   cursor: pointer;
   transition: transform 120ms ease, filter 120ms ease, box-shadow 220ms ease;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .sigil:hover {
@@ -1084,6 +1089,8 @@ const milestones = [
 const state = loadState();
 trackOpenDay();
 
+let lastSigilTouchAt = 0;
+
 const nodes = {
   essence: document.querySelector("#essence"),
   perClick: document.querySelector("#perClick"),
@@ -1132,6 +1139,18 @@ nodes.sigilButton.addEventListener("click", (event) => {
   checkMilestones();
   render();
 });
+
+nodes.sigilButton.addEventListener(
+  "touchend",
+  (event) => {
+    const now = Date.now();
+    if (now - lastSigilTouchAt < 320) {
+      event.preventDefault();
+    }
+    lastSigilTouchAt = now;
+  },
+  { passive: false },
+);
 
 nodes.invokeButton.addEventListener("click", () => {
   if (state.focus < 100) return;
