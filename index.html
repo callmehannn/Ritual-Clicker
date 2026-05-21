@@ -104,10 +104,13 @@ button {
 }
 
 .eyebrow {
-  margin: 0 0 5px;
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-size: clamp(2.8rem, 9vw, 5.6rem);
+  line-height: 0.9;
   text-transform: uppercase;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 h1,
@@ -324,16 +327,16 @@ h2 {
   box-shadow: none;
 }
 
-.login-panel p {
-  margin-top: 4px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
 .login-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
+}
+
+.login-panel p {
+  margin-top: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .login-button {
@@ -350,6 +353,15 @@ h2 {
   font-weight: 800;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .login-button span {
   width: 22px;
   height: 22px;
@@ -362,7 +374,32 @@ h2 {
 }
 
 .ritual-network-button span {
-  background: linear-gradient(135deg, var(--bright), #ffffff);
+  background: transparent;
+}
+
+.ritual-mark {
+  position: relative;
+}
+
+.ritual-mark::before,
+.ritual-mark::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 3px solid #ffffff;
+  transform: rotate(45deg);
+}
+
+.ritual-mark::after {
+  inset: 7px;
+  border-color: var(--bright);
+  transform: rotate(45deg);
+}
+
+.login-button .metamask-mark {
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
 }
 
 .logout-button {
@@ -550,6 +587,15 @@ h2 {
   color: var(--bright);
 }
 
+.mobile-tab-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.mobile-nav {
+  display: none;
+}
+
 .level-guide {
   display: grid;
   gap: 9px;
@@ -671,19 +717,84 @@ h2 {
     padding: 10px 0;
   }
 
+  .shop-panel {
+    display: contents;
+  }
+
+  .login-panel {
+    order: 0;
+    justify-self: stretch;
+    width: 100%;
+    padding-bottom: 10px;
+    margin-left: 0;
+  }
+
+  .ritual-stage {
+    order: -1;
+  }
+
+  .panel-heading,
+  .shop-list,
+  .mobile-tab-panel,
+  .level-guide,
+  .achievements,
+  .leaderboard {
+    order: 1;
+    width: 100%;
+  }
+
+  .mobile-tab-panel {
+    display: none;
+  }
+
+  .mobile-tab-panel.is-active {
+    display: grid;
+  }
+
+  .mobile-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px 8px 0 0;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+
+  .mobile-nav button {
+    min-height: 48px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    background: transparent;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .mobile-nav button:last-child {
+    border-right: 0;
+  }
+
+  .mobile-nav button.is-active {
+    color: #02120b;
+    background: var(--bright);
+  }
+
   .resource-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .sigil {
     width: min(82vw, 340px, 38vh);
   }
-  .shop-panel {
-    min-height: 520px;
-  }
-
   .login-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto 1fr;
   }
 }
 
@@ -695,7 +806,6 @@ h2 {
         <div class="topbar">
           <div>
             <p class="eyebrow">Ritual Clicker</p>
-            <h1>Awaken the Circle</h1>
           </div>
         </div>
 
@@ -753,18 +863,14 @@ h2 {
             <h2>Account</h2>
             <p id="accountStatus">Not connected</p>
           </div>
-          <div class="login-actions">
-            <button class="login-button" id="xLoginButton" type="button">
-              <span aria-hidden="true">X</span>
-              Login with X
-            </button>
+          <div class="login-actions" id="accountOptions">
             <button class="login-button" id="metaMaskButton" type="button">
-              <span aria-hidden="true">M</span>
-              MetaMask
+              <span class="metamask-mark" aria-hidden="true">🦊</span>
+              Connect Wallet
             </button>
             <button class="login-button ritual-network-button" id="ritualTestnetButton" type="button">
-              <span aria-hidden="true">R</span>
-              Ritual Testnet
+              <span class="ritual-mark" aria-hidden="true"></span>
+              Add Ritual Testnet
             </button>
             <button class="login-button logout-button" id="logoutButton" type="button" hidden>
               Logout
@@ -772,34 +878,36 @@ h2 {
           </div>
         </section>
 
-        <div class="panel-heading">
-          <h2>Ritual Tools</h2>
-          <p id="statusText">Tap the sigil to start the circle.</p>
-        </div>
+        <section class="mobile-tab-panel is-active" data-tab-panel="upgrade">
+          <div class="panel-heading">
+            <h2>Ritual Tools</h2>
+            <p id="statusText">Tap the sigil to start the circle.</p>
+          </div>
 
-        <div class="shop-list" id="shopList"></div>
+          <div class="shop-list" id="shopList"></div>
 
-        <section class="level-guide" aria-label="Level guide">
-          <h2>Levels</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Level</th>
-                <th>Title</th>
-                <th>Total Click Needed</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>1</td><td>Bitty</td><td>0</td></tr>
-              <tr><td>2</td><td>Ritty</td><td>100</td></tr>
-              <tr><td>3</td><td>Ritualist</td><td>500</td></tr>
-              <tr><td>4</td><td>Radiant Ritualist</td><td>2,500</td></tr>
-              <tr><td>5</td><td>Zealot</td><td>10,000</td></tr>
-            </tbody>
-          </table>
+          <section class="level-guide" aria-label="Level guide">
+            <h2>Levels</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Title</th>
+                  <th>Total Click Needed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Bitty</td><td>0</td></tr>
+                <tr><td>2</td><td>Ritty</td><td>100</td></tr>
+                <tr><td>3</td><td>Ritualist</td><td>500</td></tr>
+                <tr><td>4</td><td>Radiant Ritualist</td><td>2,500</td></tr>
+                <tr><td>5</td><td>Zealot</td><td>10,000</td></tr>
+              </tbody>
+            </table>
+          </section>
         </section>
 
-        <section class="achievements" aria-label="Achievements">
+        <section class="achievements mobile-tab-panel" data-tab-panel="achievements" aria-label="Achievements">
           <div class="section-heading">
             <h2>Achievements</h2>
             <span id="achievementCount">0/17</span>
@@ -807,7 +915,7 @@ h2 {
           <ol id="achievementsList"></ol>
         </section>
 
-        <section class="leaderboard" aria-label="Leaderboard">
+        <section class="leaderboard mobile-tab-panel" data-tab-panel="leaderboard" aria-label="Leaderboard">
           <div class="leaderboard-heading">
             <h2>Leaderboard</h2>
             <span id="playerRank">Rank #1</span>
@@ -815,6 +923,11 @@ h2 {
           <ol id="leaderboardList"></ol>
         </section>
       </aside>
+      <nav class="mobile-nav" aria-label="Mobile sections">
+        <button class="is-active" type="button" data-tab-target="upgrade">Upgrade</button>
+        <button type="button" data-tab-target="achievements">Achievements</button>
+        <button type="button" data-tab-target="leaderboard">Leaderboard</button>
+      </nav>
     </main>
 
     <template id="upgradeTemplate">
@@ -963,6 +1076,7 @@ const nodes = {
   sigilButton: document.querySelector("#sigilButton"),
   invokeButton: document.querySelector("#invokeButton"),
   resetButton: document.querySelector("#resetButton"),
+  accountOptions: document.querySelector("#accountOptions"),
   accountStatus: document.querySelector("#accountStatus"),
   xLoginButton: document.querySelector("#xLoginButton"),
   metaMaskButton: document.querySelector("#metaMaskButton"),
@@ -975,6 +1089,8 @@ const nodes = {
   leaderboardList: document.querySelector("#leaderboardList"),
   playerRank: document.querySelector("#playerRank"),
   template: document.querySelector("#upgradeTemplate"),
+  mobileNavButtons: document.querySelectorAll("[data-tab-target]"),
+  mobileTabPanels: document.querySelectorAll("[data-tab-panel]"),
 };
 
 renderShop();
@@ -1020,20 +1136,22 @@ if (nodes.resetButton) {
   });
 }
 
-nodes.xLoginButton.addEventListener("click", () => {
-  const handle = window.prompt("Enter your X username for this demo login:");
-  if (!handle) return;
+if (nodes.xLoginButton) {
+  nodes.xLoginButton.addEventListener("click", () => {
+    const handle = window.prompt("Enter your X username for this demo login:");
+    if (!handle) return;
 
-  const cleanHandle = handle.trim().replace(/^@/, "");
-  if (!cleanHandle) return;
+    const cleanHandle = handle.trim().replace(/^@/, "");
+    if (!cleanHandle) return;
 
-  state.account = {
-    type: "x",
-    label: `@${cleanHandle}`,
-  };
-  addLog(`Logged in with X as @${cleanHandle}.`);
-  render();
-});
+    state.account = {
+      type: "x",
+      label: `@${cleanHandle}`,
+    };
+    addLog(`Logged in with X as @${cleanHandle}.`);
+    render();
+  });
+}
 
 nodes.metaMaskButton.addEventListener("click", async () => {
   if (!window.ethereum) {
@@ -1094,6 +1212,13 @@ nodes.logoutButton.addEventListener("click", () => {
   state.account = null;
   addLog("Account disconnected.");
   render();
+});
+
+nodes.mobileNavButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setMobileTab(button.dataset.tabTarget);
+    document.querySelector(".shop-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 });
 
 function tick() {
@@ -1183,7 +1308,7 @@ function getStatusText() {
 function renderAccount() {
   if (!state.account) {
     nodes.accountStatus.textContent = "Not connected";
-    nodes.xLoginButton.hidden = false;
+    if (nodes.xLoginButton) nodes.xLoginButton.hidden = false;
     nodes.metaMaskButton.hidden = false;
     nodes.ritualTestnetButton.hidden = false;
     nodes.logoutButton.hidden = true;
@@ -1192,7 +1317,7 @@ function renderAccount() {
 
   const provider = state.account.type === "metamask" ? "MetaMask" : state.account.type === "ritual" ? "Ritual Testnet" : "X";
   nodes.accountStatus.textContent = `${provider}: ${state.account.label}`;
-  nodes.xLoginButton.hidden = true;
+  if (nodes.xLoginButton) nodes.xLoginButton.hidden = true;
   nodes.metaMaskButton.hidden = true;
   nodes.ritualTestnetButton.hidden = true;
   nodes.logoutButton.hidden = false;
@@ -1236,6 +1361,15 @@ function renderLeaderboard() {
       `,
     )
     .join("");
+}
+
+function setMobileTab(target) {
+  nodes.mobileNavButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.tabTarget === target);
+  });
+  nodes.mobileTabPanels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.tabPanel === target);
+  });
 }
 
 function checkAchievements() {
