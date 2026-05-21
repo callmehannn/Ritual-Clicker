@@ -7,16 +7,18 @@
     <style>
 :root {
   color-scheme: dark;
-  --bg: #03120c;
-  --panel: #062017;
-  --panel-strong: #083524;
+  --bg: #050606;
+  --panel: #07110d;
+  --panel-strong: #0b2117;
   --ink: #e9fff6;
   --muted: #9ce8c7;
   --bright: #40ffaf;
   --deep: #077345;
   --deep-soft: rgba(7, 115, 69, 0.72);
-  --line: rgba(64, 255, 175, 0.18);
+  --line: rgba(64, 255, 175, 0.16);
   --shadow: rgba(0, 0, 0, 0.42);
+  --aura: #9eeeff;
+  --aura-soft: rgba(158, 238, 255, 0.46);
 }
 
 * {
@@ -28,10 +30,8 @@ body {
   min-height: 100vh;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 24% 16%, rgba(64, 255, 175, 0.16), transparent 28rem),
-    radial-gradient(circle at 82% 76%, rgba(7, 115, 69, 0.36), transparent 26rem),
-    linear-gradient(135deg, #03120c 0%, #052418 52%, #020907 100%);
+  background: #000;
+  background-attachment: fixed;
 }
 
 button {
@@ -57,7 +57,7 @@ button {
 .shop-panel,
 .login-panel {
   border: 1px solid var(--line);
-  background: rgba(6, 32, 23, 0.84);
+  background: rgba(2, 4, 4, 0.9);
   box-shadow: 0 20px 60px var(--shadow);
   backdrop-filter: blur(14px);
 }
@@ -73,16 +73,7 @@ button {
 }
 
 .ritual-stage::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  pointer-events: none;
-  opacity: 0.18;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: radial-gradient(circle, black 36%, transparent 72%);
+  display: none;
 }
 
 .topbar,
@@ -106,7 +97,9 @@ button {
 .upgrade-desc,
 .panel-heading p,
 .leaderboard li,
-.leaderboard-heading span {
+.leaderboard-heading span,
+.section-heading span,
+.achievement-req {
   color: var(--muted);
 }
 
@@ -157,7 +150,58 @@ h2 {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(3, 18, 12, 0.62);
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.level-progress-card {
+  grid-column: 1 / -1;
+}
+
+.resource-panel > .level-progress-card {
+  border: 0;
+}
+
+.level-title-row,
+.level-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.level-title-row strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.level-progress-track {
+  height: 14px;
+  overflow: hidden;
+  margin: 12px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.level-progress-track span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--deep), var(--bright));
+  transition: width 180ms ease;
+}
+
+.level-progress-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.level-progress-meta strong {
+  color: var(--bright);
+  font-size: 0.82rem;
 }
 
 .label {
@@ -183,9 +227,14 @@ h2 {
   border: 0;
   border-radius: 50%;
   background: #000;
-  box-shadow: 0 0 52px rgba(64, 255, 175, 0.22), 0 18px 60px rgba(0, 0, 0, 0.42);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--aura) 52%, transparent),
+    0 0 34px var(--aura-soft),
+    0 0 78px color-mix(in srgb, var(--aura) 38%, transparent),
+    0 0 136px color-mix(in srgb, var(--aura) 24%, transparent),
+    0 18px 60px rgba(0, 0, 0, 0.42);
   cursor: pointer;
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 220ms ease;
   overflow: hidden;
 }
 
@@ -225,7 +274,7 @@ h2 {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(3, 18, 12, 0.78);
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .meter-track span {
@@ -283,7 +332,7 @@ h2 {
 
 .login-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
 }
 
@@ -296,7 +345,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(64, 255, 175, 0.08);
+  background: rgba(0, 0, 0, 0.36);
   cursor: pointer;
   font-weight: 800;
 }
@@ -310,6 +359,10 @@ h2 {
   color: #02120b;
   background: var(--bright);
   font-size: 0.8rem;
+}
+
+.ritual-network-button span {
+  background: linear-gradient(135deg, var(--bright), #ffffff);
 }
 
 .logout-button {
@@ -335,7 +388,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(64, 255, 175, 0.06);
+  background: rgba(0, 0, 0, 0.42);
   text-align: left;
   cursor: pointer;
 }
@@ -352,8 +405,30 @@ h2 {
   place-items: center;
   border-radius: 8px;
   color: var(--bright);
-  background: rgba(64, 255, 175, 0.12);
+  background: rgba(7, 115, 69, 0.36);
   font-size: 1.5rem;
+}
+
+.upgrade-icon-relic {
+  color: #40ffaf;
+  background: rgba(64, 255, 175, 0.14);
+}
+
+.upgrade-icon-chant {
+  color: #fff7e8;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 111, 37, 0.45), transparent 26%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.upgrade-icon-altar {
+  color: #ffd76a;
+  background: rgba(255, 215, 106, 0.16);
+}
+
+.upgrade-icon-mirror {
+  color: #5b1bb8;
+  background: rgba(91, 27, 184, 0.22);
 }
 
 .upgrade-copy {
@@ -381,26 +456,30 @@ h2 {
   font-weight: 800;
 }
 
-.leaderboard {
+.leaderboard,
+.achievements {
   display: grid;
   gap: 9px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
-.leaderboard-heading {
+.leaderboard-heading,
+.section-heading {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
 }
 
-.leaderboard-heading span {
+.leaderboard-heading span,
+.section-heading span {
   font-size: 0.82rem;
   font-weight: 800;
 }
 
-.leaderboard ol {
+.leaderboard ol,
+.achievements ol {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -408,7 +487,8 @@ h2 {
   gap: 7px;
 }
 
-.leaderboard li {
+.leaderboard li,
+.achievements li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
@@ -417,8 +497,27 @@ h2 {
   padding: 8px 10px;
   border: 1px solid rgba(64, 255, 175, 0.12);
   border-radius: 8px;
-  background: rgba(64, 255, 175, 0.05);
+  background: rgba(0, 0, 0, 0.38);
   font-size: 0.86rem;
+}
+
+.achievements li {
+  grid-template-columns: minmax(0, 1fr);
+  opacity: 0.42;
+}
+
+.achievements li.is-unlocked {
+  opacity: 1;
+}
+
+.achievement-name {
+  color: var(--ink);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.achievement-req {
+  font-size: 0.76rem;
 }
 
 .leaderboard li::before {
@@ -438,7 +537,7 @@ h2 {
 
 .leaderboard li.is-player {
   border-color: rgba(64, 255, 175, 0.5);
-  background: rgba(64, 255, 175, 0.12);
+  background: rgba(7, 115, 69, 0.24);
 }
 
 .leader-name {
@@ -449,6 +548,103 @@ h2 {
 
 .leaderboard strong {
   color: var(--bright);
+}
+
+.level-guide {
+  display: grid;
+  gap: 9px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.level-guide table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid rgba(64, 255, 175, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.level-guide th,
+.level-guide td {
+  padding: 8px 9px;
+  border-bottom: 1px solid rgba(64, 255, 175, 0.1);
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.level-guide th {
+  color: var(--bright);
+  font-weight: 900;
+}
+
+.level-guide td {
+  color: var(--muted);
+}
+
+.level-guide tr:last-child td {
+  border-bottom: 0;
+}
+
+.ritual-stage,
+.shop-panel,
+.login-panel {
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.resource-panel {
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.resource-panel > div {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.resource-panel > div:nth-child(3),
+.resource-panel > div:last-child {
+  border-right: 0;
+}
+
+.resource-panel > .level-progress-card {
+  border-top: 1px solid var(--line);
+  padding-inline: 0;
+}
+
+.login-panel {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.upgrade-card,
+.leaderboard li,
+.achievements li {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.upgrade-card:disabled {
+  background: transparent;
+}
+
+.leaderboard li.is-player {
+  border-color: rgba(64, 255, 175, 0.45);
+  background: rgba(7, 115, 69, 0.14);
+}
+
+.level-guide table {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .float-text {
@@ -501,9 +697,6 @@ h2 {
             <p class="eyebrow">Ritual Clicker</p>
             <h1>Awaken the Circle</h1>
           </div>
-          <button class="icon-button" id="resetButton" type="button" title="Reset run" aria-label="Reset run">
-            <span aria-hidden="true">↺</span>
-          </button>
         </div>
 
         <div class="resource-panel">
@@ -518,6 +711,20 @@ h2 {
           <div>
             <span class="label">Per second</span>
             <strong id="perSecond">0</strong>
+          </div>
+          <div class="level-progress-card">
+            <div class="level-title-row">
+              <span class="label">Title</span>
+              <strong id="currentLevelTitle">Bitty</strong>
+            </div>
+            <div class="level-progress-track" aria-label="Total click progress">
+              <span id="levelProgressFill"></span>
+            </div>
+            <div class="level-progress-meta">
+              <span id="levelProgressStart">0</span>
+              <strong id="totalClicks">0 / 100 clicks</strong>
+              <span id="levelProgressEnd">100</span>
+            </div>
           </div>
         </div>
 
@@ -555,6 +762,10 @@ h2 {
               <span aria-hidden="true">M</span>
               MetaMask
             </button>
+            <button class="login-button ritual-network-button" id="ritualTestnetButton" type="button">
+              <span aria-hidden="true">R</span>
+              Ritual Testnet
+            </button>
             <button class="login-button logout-button" id="logoutButton" type="button" hidden>
               Logout
             </button>
@@ -567,6 +778,34 @@ h2 {
         </div>
 
         <div class="shop-list" id="shopList"></div>
+
+        <section class="level-guide" aria-label="Level guide">
+          <h2>Levels</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Title</th>
+                <th>Total Click Needed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>Bitty</td><td>0</td></tr>
+              <tr><td>2</td><td>Ritty</td><td>100</td></tr>
+              <tr><td>3</td><td>Ritualist</td><td>500</td></tr>
+              <tr><td>4</td><td>Radiant Ritualist</td><td>2,500</td></tr>
+              <tr><td>5</td><td>Zealot</td><td>10,000</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="achievements" aria-label="Achievements">
+          <div class="section-heading">
+            <h2>Achievements</h2>
+            <span id="achievementCount">0/17</span>
+          </div>
+          <ol id="achievementsList"></ol>
+        </section>
 
         <section class="leaderboard" aria-label="Leaderboard">
           <div class="leaderboard-heading">
@@ -593,10 +832,22 @@ h2 {
     <script>
 const saveKey = "ritual-clicker-state-v2";
 
+const ritualNetwork = {
+  chainId: "0x7bb",
+  chainName: "Ritual Testnet",
+  nativeCurrency: {
+    name: "RITUAL",
+    symbol: "RITUAL",
+    decimals: 18,
+  },
+  rpcUrls: ["https://rpc.ritualfoundation.org/"],
+  blockExplorerUrls: ["http://explorer.ritualfoundation.org"],
+};
+
 const upgrades = [
   {
     id: "candle",
-    icon: "♨",
+    icon: "🪄",
     name: "Bitty",
     desc: "+1 essence per click",
     baseCost: 15,
@@ -607,7 +858,7 @@ const upgrades = [
   },
   {
     id: "chant",
-    icon: "◌",
+    icon: "🕯️",
     name: "Ritty",
     desc: "+2 essence per second",
     baseCost: 50,
@@ -618,7 +869,7 @@ const upgrades = [
   },
   {
     id: "relic",
-    icon: "✧",
+    icon: "♨",
     name: "Ritualist",
     desc: "+5 essence per click",
     baseCost: 160,
@@ -629,7 +880,7 @@ const upgrades = [
   },
   {
     id: "altar",
-    icon: "▣",
+    icon: "●",
     name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
@@ -640,7 +891,7 @@ const upgrades = [
   },
   {
     id: "mirror",
-    icon: "◇",
+    icon: "🌀",
     name: "Zealot",
     desc: "Invocation grants 35% more",
     baseCost: 1400,
@@ -649,6 +900,42 @@ const upgrades = [
       state.invokeBonus += 0.35;
     },
   },
+];
+
+const levels = [
+  { level: 1, title: "Bitty", clicks: 0 },
+  { level: 2, title: "Ritty", clicks: 100 },
+  { level: 3, title: "Ritualist", clicks: 500 },
+  { level: 4, title: "Radiant Ritualist", clicks: 2500 },
+  { level: 5, title: "Zealot", clicks: 10000 },
+];
+
+const levelAuras = {
+  Bitty: { aura: "#9eeeff", soft: "rgba(158, 238, 255, 0.5)" },
+  Ritty: { aura: "#bd7cff", soft: "rgba(189, 124, 255, 0.5)" },
+  Ritualist: { aura: "#40ffaf", soft: "rgba(64, 255, 175, 0.5)" },
+  "Radiant Ritualist": { aura: "#ffd76a", soft: "rgba(255, 215, 106, 0.54)" },
+  Zealot: { aura: "#5b1bb8", soft: "rgba(91, 27, 184, 0.58)" },
+};
+
+const achievements = [
+  { id: "first-gritual", name: "First gRitual", requirement: "First click", isUnlocked: (state) => state.totalClicks >= 1 },
+  { id: "tiny-cultist", name: "Tiny Cultist", requirement: "50 clicks", isUnlocked: (state) => state.totalClicks >= 50 },
+  { id: "bitty-energy", name: "Bitty Energy", requirement: "Become Bitty", isUnlocked: () => hasReachedTitle("Bitty") },
+  { id: "ritual-beginner", name: "Ritual Beginner", requirement: "100 clicks", isUnlocked: (state) => state.totalClicks >= 100 },
+  { id: "finger-destroyer", name: "Finger Destroyer", requirement: "500 clicks", isUnlocked: (state) => state.totalClicks >= 500 },
+  { id: "ritty-certified", name: "Ritty Certified", requirement: "Become Ritty", isUnlocked: () => hasReachedTitle("Ritty") },
+  { id: "sleep-temporary", name: "Sleep Is Temporary", requirement: "1,000 clicks", isUnlocked: (state) => state.totalClicks >= 1000 },
+  { id: "ritual-maxxing", name: "Ritual Maxxing", requirement: "2,500 clicks", isUnlocked: (state) => state.totalClicks >= 2500 },
+  { id: "infinite-grindset", name: "Infinite Grindset", requirement: "5,000 clicks", isUnlocked: (state) => state.totalClicks >= 5000 },
+  { id: "radiant-one", name: "Radiant One", requirement: "Become Radiant Ritualist", isUnlocked: () => hasReachedTitle("Radiant Ritualist") },
+  { id: "touch-grass", name: "Touch Grass", requirement: "Play 1 hour", isUnlocked: (state) => state.playSeconds >= 3600 },
+  { id: "not-addicted", name: "Not Addicted btw", requirement: "Open the game 3 days", isUnlocked: (state) => state.openedDays.length >= 3 },
+  { id: "ritual-never-ends", name: "Ritual Never Ends", requirement: "10,000 clicks", isUnlocked: (state) => state.totalClicks >= 10000 },
+  { id: "zealot-awakening", name: "Zealot Awakening", requirement: "Become Zealot", isUnlocked: () => hasReachedTitle("Zealot") },
+  { id: "gpu-melter", name: "GPU Melter", requirement: "100 income/sec", isUnlocked: (state) => state.perSecond >= 100 },
+  { id: "ritual-testnet-ready", name: "Ritual Testnet Ready", requirement: "Connect Ritual Testnet", isUnlocked: (state) => state.ritualTestnetConnected },
+  { id: "beyond-human", name: "Beyond Human", requirement: "100,000 clicks", isUnlocked: (state) => state.totalClicks >= 100000 },
 ];
 
 const milestones = [
@@ -660,11 +947,17 @@ const milestones = [
 ];
 
 const state = loadState();
+trackOpenDay();
 
 const nodes = {
   essence: document.querySelector("#essence"),
   perClick: document.querySelector("#perClick"),
   perSecond: document.querySelector("#perSecond"),
+  currentLevelTitle: document.querySelector("#currentLevelTitle"),
+  totalClicks: document.querySelector("#totalClicks"),
+  levelProgressFill: document.querySelector("#levelProgressFill"),
+  levelProgressStart: document.querySelector("#levelProgressStart"),
+  levelProgressEnd: document.querySelector("#levelProgressEnd"),
   focusText: document.querySelector("#focusText"),
   focusFill: document.querySelector("#focusFill"),
   sigilButton: document.querySelector("#sigilButton"),
@@ -673,9 +966,12 @@ const nodes = {
   accountStatus: document.querySelector("#accountStatus"),
   xLoginButton: document.querySelector("#xLoginButton"),
   metaMaskButton: document.querySelector("#metaMaskButton"),
+  ritualTestnetButton: document.querySelector("#ritualTestnetButton"),
   logoutButton: document.querySelector("#logoutButton"),
   shopList: document.querySelector("#shopList"),
   statusText: document.querySelector("#statusText"),
+  achievementsList: document.querySelector("#achievementsList"),
+  achievementCount: document.querySelector("#achievementCount"),
   leaderboardList: document.querySelector("#leaderboardList"),
   playerRank: document.querySelector("#playerRank"),
   template: document.querySelector("#upgradeTemplate"),
@@ -688,6 +984,7 @@ setInterval(saveState, 5000);
 
 nodes.sigilButton.addEventListener("click", (event) => {
   const gain = Math.ceil(state.perClick * state.multiplier);
+  state.totalClicks += 1;
   state.essence += gain;
   state.totalEarned += gain;
   state.focus = Math.min(100, state.focus + 3 + state.perClick * 0.05);
@@ -710,14 +1007,18 @@ nodes.invokeButton.addEventListener("click", () => {
   render();
 });
 
-nodes.resetButton.addEventListener("click", () => {
-  const ok = window.confirm("Reset the ritual circle from the beginning?");
-  if (!ok) return;
-  localStorage.removeItem(saveKey);
-  Object.assign(state, defaultState());
-  renderShop();
-  render();
-});
+if (nodes.resetButton) {
+  nodes.resetButton.addEventListener("click", () => {
+    const ok = window.confirm("Reset the ritual circle from the beginning?");
+    if (!ok) return;
+    try {
+      localStorage.removeItem(saveKey);
+    } catch {}
+    Object.assign(state, defaultState());
+    renderShop();
+    render();
+  });
+}
 
 nodes.xLoginButton.addEventListener("click", () => {
   const handle = window.prompt("Enter your X username for this demo login:");
@@ -759,6 +1060,36 @@ nodes.metaMaskButton.addEventListener("click", async () => {
   }
 });
 
+nodes.ritualTestnetButton.addEventListener("click", async () => {
+  if (!window.ethereum) {
+    addLog("MetaMask was not detected in this browser.");
+    nodes.accountStatus.textContent = "MetaMask not detected";
+    return;
+  }
+
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const address = accounts[0];
+    if (!address) return;
+
+    await switchOrAddRitualTestnet();
+
+    state.account = {
+      type: "ritual",
+      label: shortenAddress(address),
+      address,
+    };
+    state.ritualTestnetConnected = true;
+    addLog(`Ritual Testnet connected: ${shortenAddress(address)}.`);
+    render();
+  } catch (error) {
+    const message = error?.code === 4001 ? "Ritual Testnet connection was cancelled." : "Could not connect Ritual Testnet.";
+    addLog(message);
+    nodes.accountStatus.textContent = message;
+    render();
+  }
+});
+
 nodes.logoutButton.addEventListener("click", () => {
   state.account = null;
   addLog("Account disconnected.");
@@ -766,6 +1097,8 @@ nodes.logoutButton.addEventListener("click", () => {
 });
 
 function tick() {
+  state.playSeconds += 1;
+
   if (Date.now() > state.multiplierEndsAt) {
     state.multiplier = 1;
   }
@@ -787,7 +1120,9 @@ function renderShop() {
   upgrades.forEach((upgrade) => {
     const clone = nodes.template.content.firstElementChild.cloneNode(true);
     clone.dataset.id = upgrade.id;
-    clone.querySelector(".upgrade-icon").textContent = upgrade.icon;
+    const icon = clone.querySelector(".upgrade-icon");
+    icon.textContent = upgrade.icon;
+    icon.classList.add(`upgrade-icon-${upgrade.id}`);
     clone.querySelector(".upgrade-name").textContent = upgrade.name;
     clone.querySelector(".upgrade-desc").textContent = upgrade.desc;
     clone.addEventListener("click", () => buyUpgrade(upgrade.id));
@@ -799,11 +1134,14 @@ function render() {
   nodes.essence.textContent = format(state.essence);
   nodes.perClick.textContent = format(Math.ceil(state.perClick * state.multiplier));
   nodes.perSecond.textContent = format(Math.ceil(state.perSecond * state.multiplier));
+  renderLevelProgress();
   nodes.focusText.textContent = `${Math.floor(state.focus)}%`;
   nodes.focusFill.style.width = `${state.focus}%`;
   nodes.invokeButton.disabled = state.focus < 100;
   nodes.statusText.textContent = getStatusText();
   renderAccount();
+  checkAchievements();
+  renderAchievements();
   renderLeaderboard();
 
   document.querySelectorAll(".upgrade-card").forEach((card) => {
@@ -847,25 +1185,42 @@ function renderAccount() {
     nodes.accountStatus.textContent = "Not connected";
     nodes.xLoginButton.hidden = false;
     nodes.metaMaskButton.hidden = false;
+    nodes.ritualTestnetButton.hidden = false;
     nodes.logoutButton.hidden = true;
     return;
   }
 
-  const provider = state.account.type === "metamask" ? "MetaMask" : "X";
+  const provider = state.account.type === "metamask" ? "MetaMask" : state.account.type === "ritual" ? "Ritual Testnet" : "X";
   nodes.accountStatus.textContent = `${provider}: ${state.account.label}`;
   nodes.xLoginButton.hidden = true;
   nodes.metaMaskButton.hidden = true;
+  nodes.ritualTestnetButton.hidden = true;
   nodes.logoutButton.hidden = false;
+}
+
+async function switchOrAddRitualTestnet() {
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ritualNetwork.chainId }],
+    });
+  } catch (error) {
+    if (error?.code !== 4902) throw error;
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [ritualNetwork],
+    });
+  }
 }
 
 function renderLeaderboard() {
   const currentPlayer = getCurrentPlayer();
   const leaderboard = [
     { name: currentPlayer, score: state.totalEarned, active: true },
-    { name: "Acolyte Zero", score: 25000 },
-    { name: "Green Warden", score: 12000 },
-    { name: "Null Oracle", score: 4800 },
-    { name: "Chain Mystic", score: 1600 },
+    { name: "Zealot Prime", score: 25000 },
+    { name: "Radiant Oracle", score: 12000 },
+    { name: "Ritualist Zero", score: 4800 },
+    { name: "Ritty Spark", score: 1600 },
   ].sort((left, right) => right.score - left.score);
 
   const playerIndex = leaderboard.findIndex((entry) => entry.active);
@@ -883,9 +1238,78 @@ function renderLeaderboard() {
     .join("");
 }
 
+function checkAchievements() {
+  achievements.forEach((achievement) => {
+    if (state.achievements[achievement.id]) return;
+    if (achievement.isUnlocked(state)) {
+      state.achievements[achievement.id] = Date.now();
+    }
+  });
+}
+
+function renderAchievements() {
+  const unlockedCount = achievements.filter((achievement) => state.achievements[achievement.id]).length;
+  nodes.achievementCount.textContent = `${unlockedCount}/${achievements.length}`;
+  nodes.achievementsList.innerHTML = achievements
+    .map((achievement) => {
+      const unlocked = Boolean(state.achievements[achievement.id]);
+      return `
+        <li class="${unlocked ? "is-unlocked" : ""}">
+          <span class="achievement-name">${achievement.name}</span>
+          <span class="achievement-req">${achievement.requirement}</span>
+        </li>
+      `;
+    })
+    .join("");
+}
+
 function getCurrentPlayer() {
-  if (state.account) return state.account.label;
-  return "Anonymous Ritualist";
+  const name = state.account ? state.account.label : "Anonymous";
+  return `${name} · ${getCurrentLevel().title}`;
+}
+
+function renderLevelProgress() {
+  const currentLevel = getCurrentLevel();
+  const nextLevel = getNextLevel();
+  const aura = levelAuras[currentLevel.title] || levelAuras.Bitty;
+  const start = currentLevel.clicks;
+  const end = nextLevel ? nextLevel.clicks : currentLevel.clicks;
+  const range = Math.max(1, end - start);
+  const progress = nextLevel ? Math.min(100, ((state.totalClicks - start) / range) * 100) : 100;
+
+  nodes.currentLevelTitle.textContent = currentLevel.title;
+  nodes.sigilButton.style.setProperty("--aura", aura.aura);
+  nodes.sigilButton.style.setProperty("--aura-soft", aura.soft);
+  nodes.levelProgressFill.style.width = `${progress}%`;
+  nodes.levelProgressStart.textContent = format(start);
+  nodes.levelProgressEnd.textContent = nextLevel ? format(end) : "Max";
+  nodes.totalClicks.textContent = nextLevel
+    ? `${format(state.totalClicks)} / ${format(end)} clicks`
+    : `${format(state.totalClicks)} clicks`;
+}
+
+function getCurrentLevel() {
+  return levels.reduce((current, level) => {
+    if (state.totalClicks >= level.clicks) return level;
+    return current;
+  }, levels[0]);
+}
+
+function getNextLevel() {
+  return levels.find((level) => level.clicks > state.totalClicks);
+}
+
+function hasReachedTitle(title) {
+  const target = levels.find((level) => level.title === title);
+  return Boolean(target && state.totalClicks >= target.clicks);
+}
+
+function trackOpenDay() {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  if (!state.openedDays.includes(today)) {
+    state.openedDays.push(today);
+  }
 }
 
 function checkMilestones() {
@@ -927,6 +1351,7 @@ function defaultState() {
   return {
     essence: 0,
     totalEarned: 0,
+    totalClicks: 0,
     perClick: 1,
     perSecond: 0,
     focus: 0,
@@ -936,6 +1361,10 @@ function defaultState() {
     account: null,
     owned: {},
     milestones: [],
+    achievements: {},
+    playSeconds: 0,
+    openedDays: [],
+    ritualTestnetConnected: false,
     log: [],
   };
 }
@@ -943,14 +1372,27 @@ function defaultState() {
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(saveKey));
-    return { ...defaultState(), ...saved };
+    const base = defaultState();
+    if (!saved) return base;
+    return {
+      ...base,
+      ...saved,
+      owned: { ...base.owned, ...saved.owned },
+      achievements: { ...base.achievements, ...saved.achievements },
+      milestones: Array.isArray(saved.milestones) ? saved.milestones : base.milestones,
+      openedDays: Array.isArray(saved.openedDays) ? saved.openedDays : base.openedDays,
+    };
   } catch {
     return defaultState();
   }
 }
 
 function saveState() {
-  localStorage.setItem(saveKey, JSON.stringify(state));
+  try {
+    localStorage.setItem(saveKey, JSON.stringify(state));
+  } catch {
+    // File previews can block storage; gameplay should still work.
+  }
 }
 
 </script>
