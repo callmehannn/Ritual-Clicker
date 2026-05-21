@@ -461,6 +461,7 @@ h2 {
 .upgrade-icon-altar {
   color: #ffd76a;
   background: rgba(255, 215, 106, 0.16);
+  font-size: 1.85rem;
 }
 
 .upgrade-icon-mirror {
@@ -522,6 +523,10 @@ h2 {
   list-style: none;
   display: grid;
   gap: 7px;
+}
+
+.achievements ol {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .leaderboard li,
@@ -786,6 +791,23 @@ h2 {
     background: var(--bright);
   }
 
+  .achievements ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .achievements li {
+    min-height: 72px;
+    padding: 8px 6px;
+  }
+
+  .achievement-name {
+    font-size: 0.76rem;
+  }
+
+  .achievement-req {
+    font-size: 0.66rem;
+  }
+
   .resource-panel {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -993,7 +1015,7 @@ const upgrades = [
   },
   {
     id: "altar",
-    icon: "●",
+    icon: "▰",
     name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
