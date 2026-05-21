@@ -1089,8 +1089,6 @@ const milestones = [
 const state = loadState();
 trackOpenDay();
 
-let lastSigilTouchAt = 0;
-
 const nodes = {
   essence: document.querySelector("#essence"),
   perClick: document.querySelector("#perClick"),
@@ -1139,18 +1137,6 @@ nodes.sigilButton.addEventListener("click", (event) => {
   checkMilestones();
   render();
 });
-
-nodes.sigilButton.addEventListener(
-  "touchend",
-  (event) => {
-    const now = Date.now();
-    if (now - lastSigilTouchAt < 320) {
-      event.preventDefault();
-    }
-    lastSigilTouchAt = now;
-  },
-  { passive: false },
-);
 
 nodes.invokeButton.addEventListener("click", () => {
   if (state.focus < 100) return;
