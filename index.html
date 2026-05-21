@@ -43,12 +43,12 @@ button {
 }
 
 .game-shell {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1720px, calc(100vw - 32px));
   min-height: 100vh;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+  gap: clamp(18px, 2vw, 28px);
   align-items: stretch;
   padding: clamp(10px, 2vh, 22px) 0;
 }
@@ -224,7 +224,7 @@ h2 {
   position: relative;
   z-index: 1;
   place-self: center;
-  width: min(54vw, 390px, 42vh);
+  width: clamp(280px, 28vw, 520px);
   aspect-ratio: 1;
   padding: 0;
   border: 0;
