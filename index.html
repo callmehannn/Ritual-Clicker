@@ -1607,8 +1607,8 @@ async function getWalletConnectProvider() {
   const { EthereumProvider } = await import("https://esm.sh/@walletconnect/ethereum-provider@2.17.2");
   walletConnectProvider = await EthereumProvider.init({
     projectId: walletConnectProjectId,
-    chains: [Number.parseInt(ritualNetwork.chainId, 16)],
-    optionalChains: [1],
+    chains: [1],
+    optionalChains: [Number.parseInt(ritualNetwork.chainId, 16)],
     rpcMap: {
       [Number.parseInt(ritualNetwork.chainId, 16)]: ritualNetwork.rpcUrls[0],
       1: "https://rpc.ankr.com/eth",
@@ -1710,6 +1710,7 @@ function getWalletErrorMessage(error, mode) {
   if (`${error?.message || ""}`.toLowerCase().includes("provider")) return "Enable Web3 provider in Supabase";
   if (`${error?.message || ""}`.toLowerCase().includes("redirect")) return "Add your Vercel URL to Supabase redirects";
   if (`${error?.message || ""}`.includes("WalletConnect needs")) return error.message;
+  if (`${error?.message || ""}`) return getReadableError(error);
   if (mode === "ritual") return "Could not add Ritual Testnet";
   return "Could not connect wallet";
 }
@@ -2130,6 +2131,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
