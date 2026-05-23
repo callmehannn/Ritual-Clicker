@@ -1189,6 +1189,7 @@ let cloudSession = null;
 let cloudSaveTimer = null;
 let isLoadingCloudState = false;
 let walletConnectProvider = null;
+let cloudLeaderboard = [];
 
 const ritualNetwork = {
   chainId: "0x7bb",
@@ -1349,8 +1350,10 @@ const nodes = {
 renderShop();
 render();
 initializeCloudSession();
+loadCloudLeaderboard();
 setInterval(tick, 1000);
 setInterval(saveState, 5000);
+setInterval(loadCloudLeaderboard, 30000);
 
 nodes.sigilButton.addEventListener("click", (event) => {
   const gain = Math.ceil(state.perClick * state.multiplier);
@@ -1782,6 +1785,7 @@ async function syncCloudProgress(address, mode) {
       state.account = account;
       await saveCloudState({ force: true });
     }
+    await loadCloudLeaderboard();
   } catch (error) {
     console.warn("Cloud sync failed", error);
     nodes.accountStatus.textContent = "Wallet connected. Cloud table not ready.";
@@ -1820,7 +1824,76 @@ async function saveCloudState({ force = false } = {}) {
   if (error) {
     console.warn("Cloud save failed", error);
     nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
+  } else {
+    await loadCloudLeaderboard();
   }
+}
+
+async function loadCloudLeaderboard() {
+  if (!supabaseClient) {
+    cloudLeaderboard = getLocalLeaderboardFallback();
+    renderLeaderboard();
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from(supabaseTable)
+      .select("wallet_address, progress, updated_at")
+      .limit(100);
+
+    if (error) throw error;
+
+    cloudLeaderboard = (data || [])
+      .map((row) => {
+        const progress = normalizeState(row.progress);
+        if (!progress || !row.wallet_address) return null;
+        return {
+          address: row.wallet_address,
+          name: `${shortenAddress(row.wallet_address)} · ${getLevelForClicks(progress.totalClicks || 0).title}`,
+          score: Number(progress.totalEarned || 0),
+          updatedAt: row.updated_at,
+        };
+      })
+      .filter((entry) => entry && entry.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 10);
+
+    cloudLeaderboard = mergeCurrentPlayerIntoLeaderboard(cloudLeaderboard);
+    renderLeaderboard();
+  } catch (error) {
+    console.warn("Leaderboard load failed", error);
+    cloudLeaderboard = getLocalLeaderboardFallback();
+    renderLeaderboard();
+  }
+}
+
+function getLocalLeaderboardFallback() {
+  if (!state.account?.address || state.totalEarned <= 0) return [];
+  return [
+    {
+      address: state.account.address,
+      name: getCurrentPlayer(),
+      score: state.totalEarned,
+    },
+  ];
+}
+
+function mergeCurrentPlayerIntoLeaderboard(entries) {
+  if (!state.account?.address || state.totalEarned <= 0) return entries;
+
+  const address = state.account.address.toLowerCase();
+  const withoutCurrent = entries.filter((entry) => entry.address?.toLowerCase() !== address);
+  return [
+    ...withoutCurrent,
+    {
+      address: state.account.address,
+      name: getCurrentPlayer(),
+      score: state.totalEarned,
+    },
+  ]
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 10);
 }
 
 function createPortableState() {
@@ -1951,22 +2024,17 @@ function isUnknownChainError(error) {
 }
 
 function renderLeaderboard() {
-  const currentPlayer = getCurrentPlayer();
-  const leaderboard = [
-    { name: currentPlayer, score: state.totalEarned, active: true },
-    { name: "Zealot Prime", score: 25000 },
-    { name: "Radiant Oracle", score: 12000 },
-    { name: "Ritualist Zero", score: 4800 },
-    { name: "Ritty Spark", score: 1600 },
-  ].sort((left, right) => right.score - left.score);
+  const leaderboard = cloudLeaderboard;
+  const currentAddress = state.account?.address?.toLowerCase();
+  const playerIndex = currentAddress
+    ? leaderboard.findIndex((entry) => entry.address?.toLowerCase() === currentAddress)
+    : -1;
 
-  const playerIndex = leaderboard.findIndex((entry) => entry.active);
-  nodes.playerRank.textContent = `Rank #${playerIndex + 1}`;
+  nodes.playerRank.textContent = playerIndex >= 0 ? `Rank #${playerIndex + 1}` : `${leaderboard.length} players`;
   nodes.leaderboardList.innerHTML = leaderboard
-    .slice(0, 5)
     .map(
       (entry) => `
-        <li class="${entry.active ? "is-player" : ""}">
+        <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
           <span class="leader-name">${entry.name}</span>
           <strong>${format(entry.score)}</strong>
         </li>
@@ -2012,6 +2080,13 @@ function renderAchievements() {
 function getCurrentPlayer() {
   const name = state.account ? state.account.label : "Anonymous";
   return `${name} Â· ${getCurrentLevel().title}`;
+}
+
+function getLevelForClicks(clicks) {
+  return levels.reduce((current, level) => {
+    if (clicks >= level.clicks) return level;
+    return current;
+  }, levels[0]);
 }
 
 function renderLevelProgress() {
@@ -2204,6 +2279,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
