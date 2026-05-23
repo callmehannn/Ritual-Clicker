@@ -1177,10 +1177,12 @@ const walletSavePrefix = `${saveKey}:wallet:`;
 const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
+const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
 let cloudSaveTimer = null;
 let isLoadingCloudState = false;
+let walletConnectProvider = null;
 
 const ritualNetwork = {
   chainId: "0x7bb",
@@ -1560,26 +1562,20 @@ function renderAccount() {
 }
 
 async function connectWallet({ mode }) {
-  if (!window.ethereum) {
-    nodes.accountStatus.textContent = "MetaMask not detected";
-    addLog("MetaMask was not detected. Progress is still saved on this browser.");
-    saveState();
-    return;
-  }
-
   setWalletBusy(true, mode === "ritual" ? "Adding Ritual..." : "Connecting...");
 
   try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const provider = await getWalletProvider();
+    const accounts = await provider.request({ method: "eth_requestAccounts" });
     const address = accounts?.[0];
     if (!address) throw new Error("No wallet address returned.");
 
     if (mode === "ritual") {
-      await switchOrAddRitualTestnet();
+      await switchOrAddRitualTestnet(provider);
       state.ritualTestnetConnected = true;
     }
 
-    await signInAndSyncWallet(address, mode);
+    await signInAndSyncWallet(address, mode, provider);
     addLog(`${mode === "ritual" ? "Ritual Testnet" : "MetaMask"} synced: ${shortenAddress(address)}.`);
     render();
   } catch (error) {
@@ -1592,7 +1588,37 @@ async function connectWallet({ mode }) {
   }
 }
 
-async function signInAndSyncWallet(address, mode) {
+async function getWalletProvider() {
+  if (window.ethereum) return window.ethereum;
+  return getWalletConnectProvider();
+}
+
+async function getWalletConnectProvider() {
+  if (walletConnectProvider) return walletConnectProvider;
+
+  nodes.accountStatus.textContent = "Opening WalletConnect...";
+  const { EthereumProvider } = await import("https://esm.sh/@walletconnect/ethereum-provider@2.17.2");
+  walletConnectProvider = await EthereumProvider.init({
+    projectId: walletConnectProjectId,
+    chains: [Number.parseInt(ritualNetwork.chainId, 16)],
+    optionalChains: [1],
+    rpcMap: {
+      [Number.parseInt(ritualNetwork.chainId, 16)]: ritualNetwork.rpcUrls[0],
+      1: "https://rpc.ankr.com/eth",
+    },
+    showQrModal: true,
+    metadata: {
+      name: "Ritual Clicker",
+      description: "Ritual Clicker wallet sync",
+      url: window.location.origin,
+      icons: [],
+    },
+  });
+
+  return walletConnectProvider;
+}
+
+async function signInAndSyncWallet(address, mode, provider) {
   attachWalletAccount(address, mode);
 
   if (!supabaseClient) {
@@ -1601,15 +1627,41 @@ async function signInAndSyncWallet(address, mode) {
   }
 
   nodes.accountStatus.textContent = "Sign to sync progress...";
-  const { data, error } = await supabaseClient.auth.signInWithWeb3({
-    chain: "ethereum",
-    statement: "Sign in to Ritual Clicker to sync your progress across devices.",
-  });
+  const { data, error } = await runWithEthereumProvider(provider, () =>
+    supabaseClient.auth.signInWithWeb3({
+      chain: "ethereum",
+      statement: "Sign in to Ritual Clicker to sync your progress across devices.",
+    }),
+  );
 
   if (error) throw error;
 
   cloudSession = data.session;
   await syncCloudProgress(address, mode);
+}
+
+async function runWithEthereumProvider(provider, action) {
+  if (provider === window.ethereum) return action();
+
+  const hadEthereum = "ethereum" in window;
+  const previousEthereum = window.ethereum;
+
+  try {
+    Object.defineProperty(window, "ethereum", {
+      configurable: true,
+      value: provider,
+    });
+    return await action();
+  } finally {
+    if (hadEthereum) {
+      Object.defineProperty(window, "ethereum", {
+        configurable: true,
+        value: previousEthereum,
+      });
+    } else {
+      delete window.ethereum;
+    }
+  }
 }
 
 function attachWalletAccount(address, mode) {
@@ -1780,19 +1832,19 @@ function getDailyReward(streak) {
   return Math.min(500, 250 + Math.max(0, streak - 1) * 50);
 }
 
-async function switchOrAddRitualTestnet() {
+async function switchOrAddRitualTestnet(provider = window.ethereum) {
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: ritualNetwork.chainId }],
     });
   } catch (error) {
     if (!isUnknownChainError(error)) throw error;
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_addEthereumChain",
       params: [ritualNetwork],
     });
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: ritualNetwork.chainId }],
     });
@@ -2057,6 +2109,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
