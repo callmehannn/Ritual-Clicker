@@ -682,22 +682,6 @@ h2 {
   font-size: 0.76rem;
 }
 
-.achievement-state {
-  width: fit-content;
-  padding: 3px 6px;
-  border: 1px solid rgba(64, 255, 175, 0.18);
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.achievements li.is-unlocked .achievement-state {
-  color: #02120b;
-  background: var(--bright);
-}
-
 .achievements li.is-onchain {
   border-color: rgba(255, 215, 106, 0.52);
   box-shadow:
@@ -706,18 +690,13 @@ h2 {
 }
 
 .achievements li.is-onchain .achievement-badge,
-.achievements li.is-onchain .achievement-state {
+.achievements li.is-onchain .achievement-claim {
   background: #ffd76a;
-}
-
-.achievement-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  align-items: center;
+  color: #02120b;
 }
 
 .achievement-claim {
+  width: fit-content;
   min-height: 24px;
   padding: 3px 7px;
   border: 1px solid rgba(64, 255, 175, 0.22);
@@ -1095,10 +1074,6 @@ h2 {
 
   .achievement-req {
     font-size: 0.62rem;
-  }
-
-  .achievement-state {
-    font-size: 0.56rem;
   }
 
   .resource-panel {
@@ -2277,12 +2252,9 @@ function renderAchievements() {
           <span class="achievement-copy">
             <span class="achievement-name">${achievement.name}</span>
             <span class="achievement-req">${achievement.requirement}</span>
-            <span class="achievement-actions">
-              <span class="achievement-state">${claimedOnchain ? "Onchain" : unlocked ? "Unlocked" : "Locked"}</span>
-              <button class="achievement-claim" type="button" data-claim-achievement="${achievement.id}" ${!unlocked || claimedOnchain ? "disabled" : ""}>
-                ${claimLabel}
-              </button>
-            </span>
+            <button class="achievement-claim" type="button" data-claim-achievement="${achievement.id}" ${!unlocked || claimedOnchain ? "disabled" : ""}>
+              ${claimLabel}
+            </button>
           </span>
         </li>
       `;
@@ -2336,8 +2308,27 @@ async function claimOnchainAchievement(achievementId) {
 }
 
 function getAchievementIcon(index, unlocked) {
-  const icons = ["✦", "◈", "☼", "◇", "◆", "✧", "⬡", "◌", "⬢", "★", "◎", "△"];
-  return unlocked ? icons[index % icons.length] : "×";
+  const achievement = achievements[index];
+  const icons = {
+    "first-gritual": "✦",
+    "tiny-cultist": "☽",
+    "bitty-energy": "🪄",
+    "ritual-beginner": "◇",
+    "finger-destroyer": "☝",
+    "ritty-certified": "🕯️",
+    "sleep-temporary": "☾",
+    "ritual-maxxing": "⬡",
+    "infinite-grindset": "∞",
+    "radiant-one": "🥇",
+    "touch-grass": "🌿",
+    "not-addicted": "◷",
+    "ritual-never-ends": "⛓",
+    "zealot-awakening": "🌀",
+    "gpu-melter": "▣",
+    "ritual-testnet-ready": "◆",
+    "beyond-human": "★",
+  };
+  return unlocked ? icons[achievement.id] || "✦" : "×";
 }
 
 function getCurrentPlayer() {
@@ -2544,6 +2535,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
