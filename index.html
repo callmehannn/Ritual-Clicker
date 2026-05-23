@@ -215,7 +215,7 @@ h2 {
 
 .level-progress-readout {
   position: relative;
-  height: 22px;
+  height: 18px;
   margin-top: 6px;
 }
 
@@ -226,7 +226,7 @@ h2 {
   min-width: max-content;
   transform: translateX(-50%);
   color: var(--bright);
-  font-size: clamp(0.78rem, 2.3vw, 1rem);
+  font-size: clamp(0.56rem, 1.45vw, 0.68rem);
   line-height: 1;
 }
 
@@ -235,10 +235,10 @@ h2 {
   display: block;
   width: 0;
   height: 0;
-  margin: 3px auto 0;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  border-top: 5px solid var(--bright);
+  margin: 2px auto 0;
+  border-left: 2.5px solid transparent;
+  border-right: 2.5px solid transparent;
+  border-top: 4px solid var(--bright);
 }
 
 .level-progress-track span {
@@ -252,7 +252,8 @@ h2 {
 
 .level-progress-meta {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: clamp(0.9rem, 2.7vw, 1.05rem);
+  font-weight: 850;
 }
 
 .label {
@@ -489,35 +490,147 @@ h2 {
 .upgrade-icon {
   width: 46px;
   height: 46px;
+  position: relative;
   display: grid;
   place-items: center;
   border-radius: 8px;
   color: var(--bright);
   background: rgba(7, 115, 69, 0.36);
   font-size: 1.5rem;
+  overflow: hidden;
+}
+
+.upgrade-icon-candle {
+  background: rgba(64, 255, 175, 0.12);
+}
+
+.upgrade-icon-candle::before {
+  content: "";
+  width: 26px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f7e86d, #9b4dff);
+  box-shadow:
+    -10px -8px 0 -1px #40ffaf,
+    9px 8px 0 -1px #f7e86d,
+    12px -10px 0 -2px #ffffff;
+  transform: rotate(-42deg);
+}
+
+.upgrade-icon-candle::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1px solid #40ffaf;
+  transform: rotate(45deg);
+  right: 10px;
+  top: 10px;
 }
 
 .upgrade-icon-relic {
-  color: #40ffaf;
+  color: transparent;
   background: rgba(64, 255, 175, 0.14);
+  font-size: 0;
+}
+
+.upgrade-icon-relic::before {
+  content: "";
+  width: 22px;
+  height: 25px;
+  border-radius: 50% 50% 46% 46%;
+  background:
+    radial-gradient(circle at 50% 66%, rgba(0, 0, 0, 0.54) 0 22%, transparent 23%),
+    radial-gradient(circle at 50% 72%, #40ffaf 0 20%, transparent 21%),
+    linear-gradient(160deg, transparent 0 34%, #40ffaf 35% 62%, transparent 63%),
+    linear-gradient(205deg, transparent 0 30%, #19c981 31% 66%, transparent 67%);
+  filter: drop-shadow(0 0 8px rgba(64, 255, 175, 0.7));
 }
 
 .upgrade-icon-chant {
-  color: #fff7e8;
-  background:
-    radial-gradient(circle at 50% 28%, rgba(255, 111, 37, 0.45), transparent 26%),
-    rgba(255, 255, 255, 0.08);
+  color: transparent;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0;
+}
+
+.upgrade-icon-chant::before {
+  content: "";
+  width: 12px;
+  height: 21px;
+  margin-top: 11px;
+  border-radius: 3px 3px 2px 2px;
+  background: linear-gradient(90deg, #d9d0c4, #ffffff 44%, #c7b8aa);
+  box-shadow: 0 0 12px rgba(255, 139, 40, 0.45);
+}
+
+.upgrade-icon-chant::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  width: 13px;
+  height: 17px;
+  border-radius: 60% 40% 60% 40%;
+  background: radial-gradient(circle at 45% 70%, #fff2a6 0 22%, #ff9d2f 23% 58%, #e34116 59%);
+  filter: drop-shadow(0 0 8px rgba(255, 106, 24, 0.86));
+  transform: rotate(42deg);
 }
 
 .upgrade-icon-altar {
-  color: #ffd76a;
+  position: relative;
+  color: transparent;
   background: rgba(255, 215, 106, 0.16);
-  font-size: 1.85rem;
+  font-size: 0;
+  overflow: hidden;
+}
+
+.upgrade-icon-altar::before {
+  content: "";
+  width: 34px;
+  height: 25px;
+  background:
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 11px 1px / 20px 7px no-repeat,
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 4px 9px / 20px 7px no-repeat,
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 14px 17px / 20px 7px no-repeat;
+  filter: drop-shadow(0 0 7px rgba(255, 215, 106, 0.62));
+  transform: skewX(-10deg);
+}
+
+.upgrade-icon-altar::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.38);
+  transform: rotate(24deg);
+  left: 24px;
+  top: 16px;
 }
 
 .upgrade-icon-mirror {
-  color: #5b1bb8;
+  color: transparent;
   background: rgba(91, 27, 184, 0.22);
+  font-size: 0;
+}
+
+.upgrade-icon-mirror::before {
+  content: "";
+  width: 25px;
+  height: 25px;
+  border: 3px solid #5b1bb8;
+  border-left-color: #8c55ff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px rgba(91, 27, 184, 0.8));
+}
+
+.upgrade-icon-mirror::after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 3px solid #8c55ff;
+  border-right-color: transparent;
+  border-radius: 50%;
 }
 
 .upgrade-copy {
@@ -970,7 +1083,7 @@ h2 {
   }
 }
 
-</style>
+    </style>
   </head>
   <body>
     <main class="game-shell">
@@ -1043,7 +1156,6 @@ h2 {
               Connect Wallet
             </button>
             <button class="login-button ritual-network-button" id="ritualTestnetButton" type="button">
-              <span class="ritual-mark" aria-hidden="true"></span>
               Add Ritual Testnet
             </button>
             <button class="login-button logout-button" id="logoutButton" type="button" hidden>
@@ -1145,8 +1257,17 @@ h2 {
       </button>
     </template>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
 const saveKey = "ritual-clicker-state-v2";
+const walletSavePrefix = `${saveKey}:wallet:`;
+const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
+const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
+const supabaseTable = "ritual_clicker_saves";
+const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
+let cloudSession = null;
+let cloudSaveTimer = null;
+let isLoadingCloudState = false;
 
 const ritualNetwork = {
   chainId: "0x7bb",
@@ -1157,13 +1278,13 @@ const ritualNetwork = {
     decimals: 18,
   },
   rpcUrls: ["https://rpc.ritualfoundation.org/"],
-  blockExplorerUrls: ["http://explorer.ritualfoundation.org"],
+  blockExplorerUrls: ["https://explorer.ritualfoundation.org"],
 };
 
 const upgrades = [
   {
     id: "candle",
-    icon: "🪄",
+    icon: "",
     name: "Bitty",
     desc: "+1 essence per click",
     baseCost: 15,
@@ -1174,7 +1295,7 @@ const upgrades = [
   },
   {
     id: "chant",
-    icon: "🕯️",
+    icon: "",
     name: "Ritty",
     desc: "+2 essence per second",
     baseCost: 50,
@@ -1185,7 +1306,7 @@ const upgrades = [
   },
   {
     id: "relic",
-    icon: "♨",
+    icon: "",
     name: "Ritualist",
     desc: "+5 essence per click",
     baseCost: 160,
@@ -1196,7 +1317,7 @@ const upgrades = [
   },
   {
     id: "altar",
-    icon: "▰",
+    icon: "â–°",
     name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
@@ -1207,7 +1328,7 @@ const upgrades = [
   },
   {
     id: "mirror",
-    icon: "🌀",
+    icon: "",
     name: "Zealot",
     desc: "Invocation grants 35% more",
     baseCost: 1400,
@@ -1306,6 +1427,7 @@ const nodes = {
 
 renderShop();
 render();
+initializeCloudSession();
 setInterval(tick, 1000);
 setInterval(saveState, 5000);
 
@@ -1364,66 +1486,39 @@ if (nodes.xLoginButton) {
   });
 }
 
-nodes.metaMaskButton.addEventListener("click", async () => {
-  if (!window.ethereum) {
-    addLog("MetaMask was not detected in this browser.");
-    nodes.accountStatus.textContent = "MetaMask not detected";
-    return;
+nodes.metaMaskButton.addEventListener("click", () => connectWallet({ mode: "metamask" }));
+
+nodes.ritualTestnetButton.addEventListener("click", () => connectWallet({ mode: "ritual" }));
+
+nodes.logoutButton.addEventListener("click", async () => {
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut({ scope: "local" });
   }
-
-  try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    const address = accounts[0];
-    if (!address) return;
-
-    state.account = {
-      type: "metamask",
-      label: shortenAddress(address),
-      address,
-    };
-    addLog(`MetaMask connected: ${shortenAddress(address)}.`);
-    render();
-  } catch {
-    addLog("MetaMask connection was cancelled.");
-    render();
-  }
-});
-
-nodes.ritualTestnetButton.addEventListener("click", async () => {
-  if (!window.ethereum) {
-    addLog("MetaMask was not detected in this browser.");
-    nodes.accountStatus.textContent = "MetaMask not detected";
-    return;
-  }
-
-  try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    const address = accounts[0];
-    if (!address) return;
-
-    await switchOrAddRitualTestnet();
-
-    state.account = {
-      type: "ritual",
-      label: shortenAddress(address),
-      address,
-    };
-    state.ritualTestnetConnected = true;
-    addLog(`Ritual Testnet connected: ${shortenAddress(address)}.`);
-    render();
-  } catch (error) {
-    const message = error?.code === 4001 ? "Ritual Testnet connection was cancelled." : "Could not connect Ritual Testnet.";
-    addLog(message);
-    nodes.accountStatus.textContent = message;
-    render();
-  }
-});
-
-nodes.logoutButton.addEventListener("click", () => {
+  cloudSession = null;
   state.account = null;
   addLog("Account disconnected.");
   render();
 });
+
+if (window.ethereum?.on) {
+  window.ethereum.on("accountsChanged", async (accounts) => {
+    const address = accounts?.[0];
+    if (!address) {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut({ scope: "local" });
+      }
+      cloudSession = null;
+      state.account = null;
+      render();
+      return;
+    }
+
+    nodes.accountStatus.textContent = "Wallet changed. Connect again to sync.";
+    state.account = null;
+    saveState();
+    renderAccount();
+  });
+}
 
 nodes.dailyClaimButton.addEventListener("click", () => {
   if (hasClaimedDailyToday()) return;
@@ -1551,6 +1646,199 @@ function renderAccount() {
   nodes.logoutButton.hidden = false;
 }
 
+async function connectWallet({ mode }) {
+  if (!window.ethereum) {
+    nodes.accountStatus.textContent = "MetaMask not detected";
+    addLog("MetaMask was not detected. Progress is still saved on this browser.");
+    saveState();
+    return;
+  }
+
+  setWalletBusy(true, mode === "ritual" ? "Adding Ritual..." : "Connecting...");
+
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    if (mode === "ritual") {
+      await switchOrAddRitualTestnet();
+      state.ritualTestnetConnected = true;
+    }
+
+    await signInAndSyncWallet(address, mode);
+    addLog(`${mode === "ritual" ? "Ritual Testnet" : "MetaMask"} synced: ${shortenAddress(address)}.`);
+    render();
+  } catch (error) {
+    const message = getWalletErrorMessage(error, mode);
+    nodes.accountStatus.textContent = message;
+    addLog(`${message} Progress is still saved locally.`);
+    saveState();
+  } finally {
+    setWalletBusy(false);
+  }
+}
+
+async function signInAndSyncWallet(address, mode) {
+  attachWalletAccount(address, mode);
+
+  if (!supabaseClient) {
+    nodes.accountStatus.textContent = "Wallet connected. Cloud sync unavailable.";
+    return;
+  }
+
+  nodes.accountStatus.textContent = "Sign to sync progress...";
+  const { data, error } = await supabaseClient.auth.signInWithWeb3({
+    chain: "ethereum",
+    statement: "Sign in to Ritual Clicker to sync your progress across devices.",
+  });
+
+  if (error) throw error;
+
+  cloudSession = data.session;
+  await syncCloudProgress(address, mode);
+}
+
+function attachWalletAccount(address, mode) {
+  const account = {
+    type: mode,
+    label: shortenAddress(address),
+    address,
+  };
+  const walletState = loadStateFromKey(getWalletSaveKey(address));
+
+  if (walletState && !hasMeaningfulProgress(state)) {
+    Object.assign(state, {
+      ...walletState,
+      account,
+      ritualTestnetConnected: mode === "ritual" || walletState.ritualTestnetConnected,
+    });
+  } else {
+    state.account = account;
+  }
+
+  saveState();
+}
+
+function setWalletBusy(isBusy, label = "") {
+  nodes.metaMaskButton.disabled = isBusy;
+  nodes.ritualTestnetButton.disabled = isBusy;
+  if (label) nodes.accountStatus.textContent = label;
+}
+
+function getWalletErrorMessage(error, mode) {
+  if (error?.code === 4001) return `${mode === "ritual" ? "Ritual Testnet" : "Wallet"} connection cancelled`;
+  if (error?.code === -32002) return "Open MetaMask to finish the pending request";
+  if (`${error?.message || ""}`.toLowerCase().includes("provider")) return "Enable Web3 provider in Supabase";
+  if (`${error?.message || ""}`.toLowerCase().includes("redirect")) return "Add your Vercel URL to Supabase redirects";
+  if (mode === "ritual") return "Could not add Ritual Testnet";
+  return "Could not connect wallet";
+}
+
+async function initializeCloudSession() {
+  if (!supabaseClient) return;
+
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    cloudSession = data.session;
+    if (!cloudSession) return;
+
+    const address = state.account?.address || getSessionWalletAddress(cloudSession);
+    if (!address) return;
+
+    attachWalletAccount(address, state.account?.type || "metamask");
+    await syncCloudProgress(address, state.account?.type || "metamask");
+    render();
+  } catch (error) {
+    console.warn("Cloud session restore failed", error);
+  }
+}
+
+async function syncCloudProgress(address, mode) {
+  if (!supabaseClient || !cloudSession?.user?.id || isLoadingCloudState) return;
+
+  isLoadingCloudState = true;
+  try {
+    const { data, error } = await supabaseClient
+      .from(supabaseTable)
+      .select("progress, wallet_address, updated_at")
+      .eq("user_id", cloudSession.user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const remoteState = normalizeState(data?.progress);
+    const account = {
+      type: mode,
+      label: shortenAddress(address),
+      address,
+    };
+
+    if (remoteState && shouldUseRemoteState(remoteState, state)) {
+      Object.assign(state, {
+        ...remoteState,
+        account,
+        ritualTestnetConnected: mode === "ritual" || remoteState.ritualTestnetConnected,
+      });
+      saveState();
+    } else {
+      state.account = account;
+      await saveCloudState({ force: true });
+    }
+  } catch (error) {
+    console.warn("Cloud sync failed", error);
+    nodes.accountStatus.textContent = "Wallet connected. Cloud table not ready.";
+  } finally {
+    isLoadingCloudState = false;
+  }
+}
+
+function shouldUseRemoteState(remoteState, localState) {
+  if (!hasMeaningfulProgress(localState)) return true;
+  return (remoteState.totalEarned || 0) > (localState.totalEarned || 0);
+}
+
+async function saveCloudState({ force = false } = {}) {
+  if (!supabaseClient || !cloudSession?.user?.id || !state.account?.address || isLoadingCloudState) return;
+
+  if (!force) {
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(() => saveCloudState({ force: true }), 1300);
+    return;
+  }
+
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = null;
+
+  const { error } = await supabaseClient.from(supabaseTable).upsert(
+    {
+      user_id: cloudSession.user.id,
+      wallet_address: state.account.address.toLowerCase(),
+      progress: createPortableState(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    console.warn("Cloud save failed", error);
+    nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
+  }
+}
+
+function createPortableState() {
+  return {
+    ...state,
+    log: [],
+  };
+}
+
+function getSessionWalletAddress(session) {
+  const identities = session?.user?.identities || [];
+  const identityData = identities.find((identity) => identity.provider === "web3")?.identity_data || identities[0]?.identity_data;
+  return identityData?.sub || identityData?.wallet_address || identityData?.address || null;
+}
+
 function renderDailyLogin() {
   const today = getDateKey();
   const claimed = hasClaimedDailyToday();
@@ -1586,12 +1874,20 @@ async function switchOrAddRitualTestnet() {
       params: [{ chainId: ritualNetwork.chainId }],
     });
   } catch (error) {
-    if (error?.code !== 4902) throw error;
+    if (!isUnknownChainError(error)) throw error;
     await window.ethereum.request({
       method: "wallet_addEthereumChain",
       params: [ritualNetwork],
     });
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ritualNetwork.chainId }],
+    });
   }
+}
+
+function isUnknownChainError(error) {
+  return error?.code === 4902 || error?.data?.originalError?.code === 4902 || `${error?.message || ""}`.includes("Unrecognized chain ID");
 }
 
 function renderLeaderboard() {
@@ -1655,7 +1951,7 @@ function renderAchievements() {
 
 function getCurrentPlayer() {
   const name = state.account ? state.account.label : "Anonymous";
-  return `${name} · ${getCurrentLevel().title}`;
+  return `${name} Â· ${getCurrentLevel().title}`;
 }
 
 function renderLevelProgress() {
@@ -1791,32 +2087,65 @@ function defaultState() {
 }
 
 function loadState() {
+  return loadStateFromKey(saveKey) || defaultState();
+}
+
+function loadStateFromKey(key) {
   try {
-    const saved = JSON.parse(localStorage.getItem(saveKey));
-    const base = defaultState();
-    if (!saved) return base;
-    return {
-      ...base,
-      ...saved,
-      owned: { ...base.owned, ...saved.owned },
-      achievements: { ...base.achievements, ...saved.achievements },
-      milestones: Array.isArray(saved.milestones) ? saved.milestones : base.milestones,
-      openedDays: Array.isArray(saved.openedDays) ? saved.openedDays : base.openedDays,
-    };
+    return normalizeState(JSON.parse(localStorage.getItem(key)));
   } catch {
-    return defaultState();
+    return null;
   }
+}
+
+function normalizeState(saved) {
+  const base = defaultState();
+  if (!saved || typeof saved !== "object") return null;
+
+  return {
+    ...base,
+    ...saved,
+    owned: { ...base.owned, ...saved.owned },
+    achievements: { ...base.achievements, ...saved.achievements },
+    milestones: Array.isArray(saved.milestones) ? saved.milestones : base.milestones,
+    openedDays: Array.isArray(saved.openedDays) ? saved.openedDays : base.openedDays,
+    dailyLastClaimDate: typeof saved.dailyLastClaimDate === "string" ? saved.dailyLastClaimDate : base.dailyLastClaimDate,
+    dailyStreak: Number.isFinite(saved.dailyStreak) ? saved.dailyStreak : base.dailyStreak,
+  };
 }
 
 function saveState() {
   try {
     localStorage.setItem(saveKey, JSON.stringify(state));
+    if (state.account?.address) {
+      localStorage.setItem(getWalletSaveKey(state.account.address), JSON.stringify(state));
+    }
+    saveCloudState();
   } catch {
     // File previews can block storage; gameplay should still work.
   }
 }
 
+function getWalletSaveKey(address) {
+  return `${walletSavePrefix}${address.toLowerCase()}`;
+}
+
+function hasMeaningfulProgress(currentState) {
+  return (
+    currentState.totalClicks > 0 ||
+    currentState.totalEarned > 0 ||
+    currentState.essence > 0 ||
+    currentState.playSeconds > 10 ||
+    Object.keys(currentState.owned || {}).length > 0
+  );
+}
+
+
 </script>
   </body>
 </html>
+
+
+
+
 
