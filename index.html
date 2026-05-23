@@ -1705,8 +1705,8 @@ async function getWalletConnectProvider() {
   const { EthereumProvider } = await import("https://esm.sh/@walletconnect/ethereum-provider@2.17.2");
   walletConnectProvider = await EthereumProvider.init({
     projectId: walletConnectProjectId,
-    chains: [1],
-    optionalChains: [Number.parseInt(ritualNetwork.chainId, 16)],
+    chains: [Number.parseInt(ritualNetwork.chainId, 16)],
+    optionalChains: [1],
     rpcMap: {
       [Number.parseInt(ritualNetwork.chainId, 16)]: ritualNetwork.rpcUrls[0],
       1: "https://rpc.ankr.com/eth",
@@ -2255,6 +2255,12 @@ async function claimOnchainAchievement(achievementId) {
   }
 
   setWalletBusy(true, "Claiming achievement...");
+  const claimButton = [...nodes.achievementsList.querySelectorAll("[data-claim-achievement]")]
+    .find((button) => button.dataset.claimAchievement === achievementId);
+  if (claimButton) {
+    claimButton.disabled = true;
+    claimButton.textContent = "Confirm in wallet...";
+  }
 
   try {
     const provider = await getWalletProvider();
@@ -2269,12 +2275,10 @@ async function claimOnchainAchievement(achievementId) {
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
     const contract = new Contract(ritualAchievementsContractAddress, ritualAchievementsAbi, signer);
-    const alreadyClaimed = await contract.hasClaimed(address, achievementId);
 
-    if (!alreadyClaimed) {
-      const tx = await contract.claimAchievement(achievementId);
-      await tx.wait();
-    }
+    const tx = await contract.claimAchievement(achievementId);
+    if (claimButton) claimButton.textContent = "Waiting onchain...";
+    await tx.wait();
 
     state.onchainAchievements[achievementId] = Date.now();
     nodes.accountStatus.textContent = `${achievement.name} claimed onchain`;
@@ -2282,6 +2286,26 @@ async function claimOnchainAchievement(achievementId) {
     render();
   } catch (error) {
     const message = getReadableError(error);
+    if (message.toLowerCase().includes("already") || message.toLowerCase().includes("claimed")) {
+      try {
+        const provider = await getWalletProvider();
+        const accounts = await getWalletAccounts(provider);
+        const address = accounts?.[0];
+        const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+        const browserProvider = new BrowserProvider(provider);
+        const signer = await browserProvider.getSigner();
+        const contract = new Contract(ritualAchievementsContractAddress, ritualAchievementsAbi, signer);
+        const alreadyClaimed = address ? await contract.hasClaimed(address, achievementId) : false;
+        if (alreadyClaimed) {
+          state.onchainAchievements[achievementId] = Date.now();
+          nodes.accountStatus.textContent = `${achievement.name} already claimed onchain`;
+          render();
+          return;
+        }
+      } catch (checkError) {
+        console.warn("Could not verify onchain achievement claim", checkError);
+      }
+    }
     nodes.accountStatus.textContent = `Achievement claim failed: ${message}`;
     addLog(`Achievement claim failed: ${message}`);
     renderAchievements();
