@@ -1255,8 +1255,6 @@ h2 {
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-const saveKey = "ritual-clicker-state-v2";
-const walletSavePrefix = `${saveKey}:wallet:`;
 const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
@@ -1534,9 +1532,6 @@ if (nodes.resetButton) {
   nodes.resetButton.addEventListener("click", () => {
     const ok = window.confirm("Reset the ritual circle from the beginning?");
     if (!ok) return;
-    try {
-      localStorage.removeItem(saveKey);
-    } catch {}
     Object.assign(state, defaultState());
     renderShop();
     render();
@@ -1569,7 +1564,7 @@ nodes.logoutButton.addEventListener("click", async () => {
     await supabaseClient.auth.signOut({ scope: "local" });
   }
   cloudSession = null;
-  state.account = null;
+  Object.assign(state, defaultState());
   addLog("Account disconnected.");
   render();
 });
@@ -1582,15 +1577,14 @@ if (window.ethereum?.on) {
         await supabaseClient.auth.signOut({ scope: "local" });
       }
       cloudSession = null;
-      state.account = null;
+      Object.assign(state, defaultState());
       render();
       return;
     }
 
     nodes.accountStatus.textContent = "Wallet changed. Connect again to sync.";
-    state.account = null;
-    saveState();
-    renderAccount();
+    Object.assign(state, defaultState());
+    render();
   });
 }
 
@@ -1723,6 +1717,11 @@ async function connectWallet({ mode }) {
     const accounts = await getWalletAccounts(provider);
     const address = accounts?.[0];
     if (!address) throw new Error("No wallet address returned.");
+    const previousAddress = state.account?.address?.toLowerCase();
+    const nextAddress = address.toLowerCase();
+    if (previousAddress && previousAddress !== nextAddress) {
+      Object.assign(state, defaultState());
+    }
 
     if (mode === "ritual") {
       await switchOrAddRitualTestnet(provider);
@@ -1735,7 +1734,7 @@ async function connectWallet({ mode }) {
   } catch (error) {
     const message = getWalletErrorMessage(error, mode);
     nodes.accountStatus.textContent = message;
-    addLog(`${message} Progress is still saved locally.`);
+    addLog(`${message} Progress is not synced until wallet connection succeeds.`);
     saveState();
   } finally {
     setWalletBusy(false);
@@ -1855,19 +1854,8 @@ function attachWalletAccount(address, mode) {
     label: shortenAddress(address),
     address,
   };
-  const walletState = loadStateFromKey(getWalletSaveKey(address));
-
-  if (walletState && !hasMeaningfulProgress(state)) {
-    Object.assign(state, {
-      ...walletState,
-      account,
-      ritualTestnetConnected: mode === "ritual" || walletState.ritualTestnetConnected,
-    });
-  } else {
-    state.account = account;
-  }
-
-  saveState();
+  state.account = account;
+  state.ritualTestnetConnected = mode === "ritual" || state.ritualTestnetConnected;
 }
 
 function setWalletBusy(isBusy, label = "") {
@@ -2543,15 +2531,7 @@ function defaultState() {
 }
 
 function loadState() {
-  return loadStateFromKey(saveKey) || defaultState();
-}
-
-function loadStateFromKey(key) {
-  try {
-    return normalizeState(JSON.parse(localStorage.getItem(key)));
-  } catch {
-    return null;
-  }
+  return defaultState();
 }
 
 function normalizeState(saved) {
@@ -2572,19 +2552,7 @@ function normalizeState(saved) {
 }
 
 function saveState() {
-  try {
-    localStorage.setItem(saveKey, JSON.stringify(state));
-    if (state.account?.address) {
-      localStorage.setItem(getWalletSaveKey(state.account.address), JSON.stringify(state));
-    }
-    saveCloudState();
-  } catch {
-    // File previews can block storage; gameplay should still work.
-  }
-}
-
-function getWalletSaveKey(address) {
-  return `${walletSavePrefix}${address.toLowerCase()}`;
+  saveCloudState();
 }
 
 function hasMeaningfulProgress(currentState) {
