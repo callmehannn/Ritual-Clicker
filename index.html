@@ -683,9 +683,7 @@ h2 {
 }
 
 .achievement-state {
-  align-self: end;
   width: fit-content;
-  margin-top: 3px;
   padding: 3px 6px;
   border: 1px solid rgba(64, 255, 175, 0.18);
   border-radius: 999px;
@@ -698,6 +696,42 @@ h2 {
 .achievements li.is-unlocked .achievement-state {
   color: #02120b;
   background: var(--bright);
+}
+
+.achievements li.is-onchain {
+  border-color: rgba(255, 215, 106, 0.52);
+  box-shadow:
+    inset 0 0 18px rgba(255, 215, 106, 0.1),
+    0 0 18px rgba(255, 215, 106, 0.12);
+}
+
+.achievements li.is-onchain .achievement-badge,
+.achievements li.is-onchain .achievement-state {
+  background: #ffd76a;
+}
+
+.achievement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.achievement-claim {
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid rgba(64, 255, 175, 0.22);
+  border-radius: 999px;
+  color: var(--bright);
+  background: rgba(64, 255, 175, 0.08);
+  font-size: 0.62rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.achievement-claim:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .leaderboard li::before {
@@ -1271,6 +1305,7 @@ const supabaseTable = "ritual_clicker_saves";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
+const ritualAchievementsContractAddress = "0x989bb911bF43679037a277b403291612BA8eecAB";
 const dailyRitualAbi = [
   "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
   "function claimDaily() returns (uint256 reward, uint256 streak)",
@@ -1279,6 +1314,10 @@ const dailyRitualAbi = [
 const ritualScoreAbi = [
   "function submitScore(uint256 totalEarned, uint256 totalClicks) returns (bool improved)",
   "function getScore(address player) view returns (uint256 bestEssence, uint256 bestClicks, uint256 submittedAt)",
+];
+const ritualAchievementsAbi = [
+  "function claimAchievement(string achievementId) returns (bool claimedNow)",
+  "function hasClaimed(address player, string achievementId) view returns (bool)",
 ];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
@@ -1545,6 +1584,12 @@ if (window.ethereum?.on) {
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 
 nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
+
+nodes.achievementsList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-claim-achievement]");
+  if (!button) return;
+  claimOnchainAchievement(button.dataset.claimAchievement);
+});
 
 nodes.mobileNavButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -2220,18 +2265,74 @@ function renderAchievements() {
   nodes.achievementsList.innerHTML = achievements
     .map((achievement, index) => {
       const unlocked = Boolean(state.achievements[achievement.id]);
+      const claimedOnchain = Boolean(state.onchainAchievements[achievement.id]);
+      const claimLabel = ritualAchievementsContractAddress
+        ? claimedOnchain
+          ? "Onchain"
+          : "Claim"
+        : "Deploy";
       return `
-        <li class="${unlocked ? "is-unlocked" : ""}">
+        <li class="${unlocked ? "is-unlocked" : ""} ${claimedOnchain ? "is-onchain" : ""}">
           <span class="achievement-badge" aria-hidden="true">${getAchievementIcon(index, unlocked)}</span>
           <span class="achievement-copy">
             <span class="achievement-name">${achievement.name}</span>
             <span class="achievement-req">${achievement.requirement}</span>
-            <span class="achievement-state">${unlocked ? "Unlocked" : "Locked"}</span>
+            <span class="achievement-actions">
+              <span class="achievement-state">${claimedOnchain ? "Onchain" : unlocked ? "Unlocked" : "Locked"}</span>
+              <button class="achievement-claim" type="button" data-claim-achievement="${achievement.id}" ${!unlocked || claimedOnchain ? "disabled" : ""}>
+                ${claimLabel}
+              </button>
+            </span>
           </span>
         </li>
       `;
     })
     .join("");
+}
+
+async function claimOnchainAchievement(achievementId) {
+  const achievement = achievements.find((item) => item.id === achievementId);
+  if (!achievement || !state.achievements[achievementId]) return;
+  if (!ritualAchievementsContractAddress) {
+    nodes.accountStatus.textContent = "Deploy achievements contract first";
+    addLog("Achievement claim needs RitualAchievements contract address.");
+    return;
+  }
+
+  setWalletBusy(true, "Claiming achievement...");
+
+  try {
+    const provider = await getWalletProvider();
+    const accounts = await getWalletAccounts(provider);
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    await switchOrAddRitualTestnet(provider);
+    attachWalletAccount(address, "ritual");
+
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const contract = new Contract(ritualAchievementsContractAddress, ritualAchievementsAbi, signer);
+    const alreadyClaimed = await contract.hasClaimed(address, achievementId);
+
+    if (!alreadyClaimed) {
+      const tx = await contract.claimAchievement(achievementId);
+      await tx.wait();
+    }
+
+    state.onchainAchievements[achievementId] = Date.now();
+    nodes.accountStatus.textContent = `${achievement.name} claimed onchain`;
+    addLog(`${achievement.name} claimed onchain.`);
+    render();
+  } catch (error) {
+    const message = getReadableError(error);
+    nodes.accountStatus.textContent = `Achievement claim failed: ${message}`;
+    addLog(`Achievement claim failed: ${message}`);
+    renderAchievements();
+  } finally {
+    setWalletBusy(false);
+  }
 }
 
 function getAchievementIcon(index, unlocked) {
@@ -2379,6 +2480,7 @@ function defaultState() {
     dailyLastClaimDate: "",
     dailyStreak: 0,
     ritualTestnetConnected: false,
+    onchainAchievements: {},
     log: [],
   };
 }
@@ -2404,6 +2506,7 @@ function normalizeState(saved) {
     ...saved,
     owned: { ...base.owned, ...saved.owned },
     achievements: { ...base.achievements, ...saved.achievements },
+    onchainAchievements: { ...base.onchainAchievements, ...saved.onchainAchievements },
     milestones: Array.isArray(saved.milestones) ? saved.milestones : base.milestones,
     openedDays: Array.isArray(saved.openedDays) ? saved.openedDays : base.openedDays,
     dailyLastClaimDate: typeof saved.dailyLastClaimDate === "string" ? saved.dailyLastClaimDate : base.dailyLastClaimDate,
@@ -2441,6 +2544,8 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
+
 
 
 
