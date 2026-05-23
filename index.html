@@ -1178,6 +1178,12 @@ const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
+const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
+const dailyRitualAbi = [
+  "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
+  "function claimDaily() returns (uint256 reward, uint256 streak)",
+  "function getPlayer(address player) view returns (uint256 lastClaimDay, uint256 streak, uint256 totalClaimed)",
+];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
 let cloudSaveTimer = null;
@@ -1435,21 +1441,7 @@ if (window.ethereum?.on) {
   });
 }
 
-nodes.dailyClaimButton.addEventListener("click", () => {
-  if (hasClaimedDailyToday()) return;
-
-  const today = getDateKey();
-  const yesterday = getDateKey(-1);
-  const nextStreak = state.dailyLastClaimDate === yesterday ? state.dailyStreak + 1 : 1;
-  const reward = getDailyReward(nextStreak);
-
-  state.dailyLastClaimDate = today;
-  state.dailyStreak = nextStreak;
-  state.essence += reward;
-  state.totalEarned += reward;
-  addLog(`Daily Login claimed. Essence +${format(reward)}.`);
-  render();
-});
+nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 
 nodes.mobileNavButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -1860,8 +1852,12 @@ function renderDailyLogin() {
     .join("");
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
   nodes.dailyReward.textContent = `${format(reward)} essence`;
-  nodes.dailyClaimButton.disabled = claimed;
-  nodes.dailyClaimButton.textContent = claimed ? "Come Back Tomorrow" : "Claim Daily Essence";
+  nodes.dailyClaimButton.disabled = dailyRitualContractAddress ? claimed : false;
+  nodes.dailyClaimButton.textContent = dailyRitualContractAddress
+    ? claimed
+      ? "Come Back Tomorrow"
+      : "Claim Onchain Daily"
+    : "Deploy Daily Contract First";
 }
 
 function hasClaimedDailyToday() {
@@ -1870,6 +1866,65 @@ function hasClaimedDailyToday() {
 
 function getDailyReward(streak) {
   return Math.min(500, 250 + Math.max(0, streak - 1) * 50);
+}
+
+async function claimDailyReward() {
+  if (dailyRitualContractAddress) {
+    await claimOnchainDailyReward();
+    return;
+  }
+
+  nodes.accountStatus.textContent = "Daily contract not deployed yet";
+  addLog("Daily Login needs the Ritual Testnet contract address before it can be onchain.");
+}
+
+async function claimOnchainDailyReward() {
+  setWalletBusy(true, "Claiming Daily onchain...");
+  nodes.dailyClaimButton.disabled = true;
+  nodes.dailyClaimButton.textContent = "Confirm in wallet...";
+
+  try {
+    const provider = await getWalletProvider();
+    const accounts = await getWalletAccounts(provider);
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    await switchOrAddRitualTestnet(provider);
+    attachWalletAccount(address, "ritual");
+
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const contract = new Contract(dailyRitualContractAddress, dailyRitualAbi, signer);
+    const [canClaim, reward, nextStreak] = await contract.previewClaim(address);
+
+    if (!canClaim) {
+      nodes.accountStatus.textContent = "Daily already claimed onchain";
+      addLog("Daily Login is already claimed today on Ritual Testnet.");
+      render();
+      return;
+    }
+
+    const tx = await contract.claimDaily();
+    nodes.dailyClaimButton.textContent = "Waiting onchain...";
+    await tx.wait();
+
+    const rewardNumber = Number(reward);
+    state.dailyLastClaimDate = getDateKey();
+    state.dailyStreak = Number(nextStreak);
+    state.essence += rewardNumber;
+    state.totalEarned += rewardNumber;
+    state.ritualTestnetConnected = true;
+    addLog(`Onchain Daily claimed. Essence +${format(rewardNumber)}.`);
+    render();
+  } catch (error) {
+    const message = getReadableError(error);
+    nodes.accountStatus.textContent = `Onchain daily failed: ${message}`;
+    addLog(`Onchain Daily failed: ${message}`);
+    renderDailyLogin();
+  } finally {
+    setWalletBusy(false);
+  }
 }
 
 async function switchOrAddRitualTestnet(provider = window.ethereum) {
@@ -2149,6 +2204,8 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
+
 
 
 
