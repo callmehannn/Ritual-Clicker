@@ -1,15 +1,17 @@
 :root {
   color-scheme: dark;
-  --bg: #03120c;
-  --panel: #062017;
-  --panel-strong: #083524;
+  --bg: #050606;
+  --panel: #07110d;
+  --panel-strong: #0b2117;
   --ink: #e9fff6;
   --muted: #9ce8c7;
   --bright: #40ffaf;
   --deep: #077345;
   --deep-soft: rgba(7, 115, 69, 0.72);
-  --line: rgba(64, 255, 175, 0.18);
+  --line: rgba(64, 255, 175, 0.16);
   --shadow: rgba(0, 0, 0, 0.42);
+  --aura: #9eeeff;
+  --aura-soft: rgba(158, 238, 255, 0.46);
 }
 
 * {
@@ -21,14 +23,14 @@ body {
   min-height: 100vh;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 24% 16%, rgba(64, 255, 175, 0.16), transparent 28rem),
-    radial-gradient(circle at 82% 76%, rgba(7, 115, 69, 0.36), transparent 26rem),
-    linear-gradient(135deg, #03120c 0%, #052418 52%, #020907 100%);
+  background: #000;
+  background-attachment: fixed;
+  touch-action: manipulation;
 }
 
 button {
   font: inherit;
+  touch-action: manipulation;
 }
 
 [hidden] {
@@ -36,12 +38,12 @@ button {
 }
 
 .game-shell {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1720px, calc(100vw - 32px));
   min-height: 100vh;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+  gap: clamp(18px, 2vw, 28px);
   align-items: stretch;
   padding: clamp(10px, 2vh, 22px) 0;
 }
@@ -50,7 +52,7 @@ button {
 .shop-panel,
 .login-panel {
   border: 1px solid var(--line);
-  background: rgba(6, 32, 23, 0.84);
+  background: rgba(2, 4, 4, 0.9);
   box-shadow: 0 20px 60px var(--shadow);
   backdrop-filter: blur(14px);
 }
@@ -66,16 +68,7 @@ button {
 }
 
 .ritual-stage::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  pointer-events: none;
-  opacity: 0.18;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: radial-gradient(circle, black 36%, transparent 72%);
+  display: none;
 }
 
 .topbar,
@@ -99,15 +92,20 @@ button {
 .upgrade-desc,
 .panel-heading p,
 .leaderboard li,
-.leaderboard-heading span {
+.leaderboard-heading span,
+.section-heading span,
+.achievement-req {
   color: var(--muted);
 }
 
 .eyebrow {
-  margin: 0 0 5px;
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-size: clamp(2.8rem, 9vw, 5.6rem);
+  line-height: 0.9;
   text-transform: uppercase;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 h1,
@@ -150,7 +148,105 @@ h2 {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(3, 18, 12, 0.62);
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.level-progress-card {
+  grid-column: 1 / -1;
+}
+
+.resource-panel > .level-progress-card {
+  border: 0;
+}
+
+.level-title-row,
+.level-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.level-title-row {
+  padding: 12px 14px;
+  border: 1px solid rgba(64, 255, 175, 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.13), rgba(7, 115, 69, 0.25)),
+    rgba(0, 0, 0, 0.52);
+  box-shadow: inset 0 0 22px rgba(64, 255, 175, 0.07);
+}
+
+.level-title-row strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.65rem, 5.4vw, 3.4rem);
+  line-height: 1;
+  text-shadow:
+    0 0 14px color-mix(in srgb, var(--aura) 60%, transparent),
+    0 0 34px color-mix(in srgb, var(--aura) 30%, transparent);
+}
+
+.level-title-row .label {
+  margin-bottom: 0;
+  color: var(--bright);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.level-progress-track {
+  height: 14px;
+  overflow: hidden;
+  margin: 6px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.level-progress-readout {
+  position: relative;
+  height: 18px;
+  margin-top: 6px;
+}
+
+.level-progress-readout strong {
+  position: absolute;
+  left: var(--level-progress, 0%);
+  bottom: 0;
+  min-width: max-content;
+  transform: translateX(-50%);
+  color: var(--bright);
+  font-size: clamp(0.56rem, 1.45vw, 0.68rem);
+  line-height: 1;
+}
+
+.level-progress-readout strong::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 2px auto 0;
+  border-left: 2.5px solid transparent;
+  border-right: 2.5px solid transparent;
+  border-top: 4px solid var(--bright);
+}
+
+.level-progress-track span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--deep), var(--bright));
+  transition: width 180ms ease;
+}
+
+.level-progress-meta {
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2.7vw, 1.05rem);
+  font-weight: 850;
 }
 
 .label {
@@ -170,16 +266,24 @@ h2 {
   position: relative;
   z-index: 1;
   place-self: center;
-  width: min(54vw, 390px, 42vh);
+  width: clamp(280px, 28vw, 520px);
   aspect-ratio: 1;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: #000;
-  box-shadow: 0 0 52px rgba(64, 255, 175, 0.22), 0 18px 60px rgba(0, 0, 0, 0.42);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--aura) 52%, transparent),
+    0 0 34px var(--aura-soft),
+    0 0 78px color-mix(in srgb, var(--aura) 38%, transparent),
+    0 0 136px color-mix(in srgb, var(--aura) 24%, transparent),
+    0 18px 60px rgba(0, 0, 0, 0.42);
   cursor: pointer;
-  transition: transform 120ms ease, filter 120ms ease;
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 220ms ease;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .sigil:hover {
@@ -218,7 +322,7 @@ h2 {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(3, 18, 12, 0.78);
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .meter-track span {
@@ -268,16 +372,16 @@ h2 {
   box-shadow: none;
 }
 
+.login-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+
 .login-panel p {
   margin-top: 4px;
   color: var(--muted);
   overflow-wrap: anywhere;
-}
-
-.login-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
 }
 
 .login-button {
@@ -289,9 +393,18 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(64, 255, 175, 0.08);
+  background: rgba(0, 0, 0, 0.36);
   cursor: pointer;
   font-weight: 800;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .login-button span {
@@ -303,6 +416,35 @@ h2 {
   color: #02120b;
   background: var(--bright);
   font-size: 0.8rem;
+}
+
+.ritual-network-button span {
+  background: transparent;
+}
+
+.ritual-mark {
+  position: relative;
+}
+
+.ritual-mark::before,
+.ritual-mark::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 3px solid #ffffff;
+  transform: rotate(45deg);
+}
+
+.ritual-mark::after {
+  inset: 7px;
+  border-color: var(--bright);
+  transform: rotate(45deg);
+}
+
+.login-button .metamask-mark {
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
 }
 
 .logout-button {
@@ -328,7 +470,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(64, 255, 175, 0.06);
+  background: rgba(0, 0, 0, 0.42);
   text-align: left;
   cursor: pointer;
 }
@@ -345,8 +487,56 @@ h2 {
   place-items: center;
   border-radius: 8px;
   color: var(--bright);
-  background: rgba(64, 255, 175, 0.12);
+  background: rgba(7, 115, 69, 0.36);
   font-size: 1.5rem;
+  overflow: hidden;
+}
+
+.upgrade-icon-relic {
+  color: #40ffaf;
+  background: rgba(64, 255, 175, 0.14);
+}
+
+.upgrade-icon-chant {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 111, 37, 0.45), transparent 26%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.upgrade-icon-altar {
+  position: relative;
+  color: transparent;
+  background: rgba(255, 215, 106, 0.16);
+  font-size: 0;
+  overflow: hidden;
+}
+
+.upgrade-icon-altar::before {
+  content: "";
+  width: 34px;
+  height: 25px;
+  background:
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 11px 1px / 20px 7px no-repeat,
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 4px 9px / 20px 7px no-repeat,
+    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 14px 17px / 20px 7px no-repeat;
+  filter: drop-shadow(0 0 7px rgba(255, 215, 106, 0.62));
+  transform: skewX(-10deg);
+}
+
+.upgrade-icon-altar::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.38);
+  transform: rotate(24deg);
+  left: 24px;
+  top: 16px;
+}
+
+.upgrade-icon-mirror {
+  color: #5b1bb8;
+  background: rgba(91, 27, 184, 0.22);
 }
 
 .upgrade-copy {
@@ -374,26 +564,31 @@ h2 {
   font-weight: 800;
 }
 
-.leaderboard {
+.leaderboard,
+.achievements,
+.daily-panel {
   display: grid;
   gap: 9px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
-.leaderboard-heading {
+.leaderboard-heading,
+.section-heading {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
 }
 
-.leaderboard-heading span {
+.leaderboard-heading span,
+.section-heading span {
   font-size: 0.82rem;
   font-weight: 800;
 }
 
-.leaderboard ol {
+.leaderboard ol,
+.achievements ol {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -401,7 +596,12 @@ h2 {
   gap: 7px;
 }
 
-.leaderboard li {
+.achievements ol {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.leaderboard li,
+.achievements li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
@@ -410,8 +610,27 @@ h2 {
   padding: 8px 10px;
   border: 1px solid rgba(64, 255, 175, 0.12);
   border-radius: 8px;
-  background: rgba(64, 255, 175, 0.05);
+  background: rgba(0, 0, 0, 0.38);
   font-size: 0.86rem;
+}
+
+.achievements li {
+  grid-template-columns: minmax(0, 1fr);
+  opacity: 0.42;
+}
+
+.achievements li.is-unlocked {
+  opacity: 1;
+}
+
+.achievement-name {
+  color: var(--ink);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.achievement-req {
+  font-size: 0.76rem;
 }
 
 .leaderboard li::before {
@@ -431,7 +650,7 @@ h2 {
 
 .leaderboard li.is-player {
   border-color: rgba(64, 255, 175, 0.5);
-  background: rgba(64, 255, 175, 0.12);
+  background: rgba(7, 115, 69, 0.24);
 }
 
 .leader-name {
@@ -442,6 +661,205 @@ h2 {
 
 .leaderboard strong {
   color: var(--bright);
+}
+
+.daily-calendar-card {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.daily-calendar-face {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 10px;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(64, 255, 175, 0.14), rgba(0, 0, 0, 0.36));
+}
+
+.daily-month,
+.daily-weekday {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.daily-day {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.15rem;
+  line-height: 0.9;
+}
+
+.daily-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.daily-week span {
+  height: 13px;
+  border: 1px solid rgba(64, 255, 175, 0.18);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 0.48rem;
+  line-height: 11px;
+  text-align: center;
+}
+
+.daily-week span.is-today {
+  border-color: var(--bright);
+  background: var(--bright);
+  color: #02120b;
+  font-weight: 900;
+}
+
+.daily-calendar-info {
+  display: grid;
+  gap: 8px;
+}
+
+.daily-stat {
+  display: grid;
+  gap: 5px;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid rgba(64, 255, 175, 0.18);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.daily-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.daily-stat strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.daily-claim-button {
+  grid-column: 1 / -1;
+}
+
+.daily-claim-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mobile-tab-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+.level-guide {
+  display: grid;
+  gap: 9px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.level-guide table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid rgba(64, 255, 175, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.level-guide th,
+.level-guide td {
+  padding: 8px 9px;
+  border-bottom: 1px solid rgba(64, 255, 175, 0.1);
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.level-guide th {
+  color: var(--bright);
+  font-weight: 900;
+}
+
+.level-guide td {
+  color: var(--muted);
+}
+
+.level-guide tr:last-child td {
+  border-bottom: 0;
+}
+
+.ritual-stage,
+.shop-panel,
+.login-panel {
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.resource-panel {
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.resource-panel > div {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.resource-panel > div:nth-child(3),
+.resource-panel > div:last-child {
+  border-right: 0;
+}
+
+.resource-panel > .level-progress-card {
+  border-top: 1px solid var(--line);
+  padding-inline: 0;
+}
+
+.login-panel {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.upgrade-card,
+.leaderboard li,
+.achievements li {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.upgrade-card:disabled {
+  background: transparent;
+}
+
+.leaderboard li.is-player {
+  border-color: rgba(64, 255, 175, 0.45);
+  background: rgba(7, 115, 69, 0.14);
+}
+
+.level-guide table {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .float-text {
@@ -468,18 +886,105 @@ h2 {
     padding: 10px 0;
   }
 
+  .shop-panel {
+    display: contents;
+  }
+
+  .login-panel {
+    order: 0;
+    justify-self: stretch;
+    width: 100%;
+    padding-bottom: 10px;
+    margin-left: 0;
+  }
+
+  .ritual-stage {
+    order: -1;
+  }
+
+  .panel-heading,
+  .shop-list,
+  .mobile-tab-panel,
+  .level-guide,
+  .achievements,
+  .leaderboard,
+  .daily-panel {
+    order: 1;
+    width: 100%;
+  }
+
+  .mobile-tab-panel {
+    display: none;
+  }
+
+  .mobile-tab-panel.is-active {
+    display: grid;
+  }
+
+  .mobile-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px 8px 0 0;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+
+  .mobile-nav button {
+    min-height: 48px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    background: transparent;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .mobile-nav button:last-child {
+    border-right: 0;
+  }
+
+  .mobile-nav button.is-active {
+    color: #02120b;
+    background: var(--bright);
+  }
+
+  .achievements ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .achievements li {
+    min-height: 72px;
+    padding: 8px 6px;
+  }
+
+  .achievement-name {
+    font-size: 0.76rem;
+  }
+
+  .achievement-req {
+    font-size: 0.66rem;
+  }
+
   .resource-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .daily-calendar-card {
+    grid-template-columns: 112px minmax(0, 1fr);
   }
 
   .sigil {
     width: min(82vw, 340px, 38vh);
   }
-  .shop-panel {
-    min-height: 520px;
-  }
-
   .login-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto 1fr;
   }
 }

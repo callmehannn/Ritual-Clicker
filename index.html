@@ -490,7 +490,6 @@ h2 {
 .upgrade-icon {
   width: 46px;
   height: 46px;
-  position: relative;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -500,79 +499,15 @@ h2 {
   overflow: hidden;
 }
 
-.upgrade-icon-candle {
-  background: rgba(64, 255, 175, 0.12);
-}
-
-.upgrade-icon-candle::before {
-  content: "";
-  width: 26px;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f7e86d, #9b4dff);
-  box-shadow:
-    -10px -8px 0 -1px #40ffaf,
-    9px 8px 0 -1px #f7e86d,
-    12px -10px 0 -2px #ffffff;
-  transform: rotate(-42deg);
-}
-
-.upgrade-icon-candle::after {
-  content: "";
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border: 1px solid #40ffaf;
-  transform: rotate(45deg);
-  right: 10px;
-  top: 10px;
-}
-
 .upgrade-icon-relic {
-  color: transparent;
+  color: #40ffaf;
   background: rgba(64, 255, 175, 0.14);
-  font-size: 0;
-}
-
-.upgrade-icon-relic::before {
-  content: "";
-  width: 22px;
-  height: 25px;
-  border-radius: 50% 50% 46% 46%;
-  background:
-    radial-gradient(circle at 50% 66%, rgba(0, 0, 0, 0.54) 0 22%, transparent 23%),
-    radial-gradient(circle at 50% 72%, #40ffaf 0 20%, transparent 21%),
-    linear-gradient(160deg, transparent 0 34%, #40ffaf 35% 62%, transparent 63%),
-    linear-gradient(205deg, transparent 0 30%, #19c981 31% 66%, transparent 67%);
-  filter: drop-shadow(0 0 8px rgba(64, 255, 175, 0.7));
 }
 
 .upgrade-icon-chant {
-  color: transparent;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 0;
-}
-
-.upgrade-icon-chant::before {
-  content: "";
-  width: 12px;
-  height: 21px;
-  margin-top: 11px;
-  border-radius: 3px 3px 2px 2px;
-  background: linear-gradient(90deg, #d9d0c4, #ffffff 44%, #c7b8aa);
-  box-shadow: 0 0 12px rgba(255, 139, 40, 0.45);
-}
-
-.upgrade-icon-chant::after {
-  content: "";
-  position: absolute;
-  top: 8px;
-  width: 13px;
-  height: 17px;
-  border-radius: 60% 40% 60% 40%;
-  background: radial-gradient(circle at 45% 70%, #fff2a6 0 22%, #ff9d2f 23% 58%, #e34116 59%);
-  filter: drop-shadow(0 0 8px rgba(255, 106, 24, 0.86));
-  transform: rotate(42deg);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 111, 37, 0.45), transparent 26%),
+    rgba(255, 255, 255, 0.08);
 }
 
 .upgrade-icon-altar {
@@ -607,30 +542,8 @@ h2 {
 }
 
 .upgrade-icon-mirror {
-  color: transparent;
+  color: #5b1bb8;
   background: rgba(91, 27, 184, 0.22);
-  font-size: 0;
-}
-
-.upgrade-icon-mirror::before {
-  content: "";
-  width: 25px;
-  height: 25px;
-  border: 3px solid #5b1bb8;
-  border-left-color: #8c55ff;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  filter: drop-shadow(0 0 8px rgba(91, 27, 184, 0.8));
-}
-
-.upgrade-icon-mirror::after {
-  content: "";
-  position: absolute;
-  width: 13px;
-  height: 13px;
-  border: 3px solid #8c55ff;
-  border-right-color: transparent;
-  border-radius: 50%;
 }
 
 .upgrade-copy {
@@ -1284,7 +1197,7 @@ const ritualNetwork = {
 const upgrades = [
   {
     id: "candle",
-    icon: "",
+    icon: "🪄",
     name: "Bitty",
     desc: "+1 essence per click",
     baseCost: 15,
@@ -1295,7 +1208,7 @@ const upgrades = [
   },
   {
     id: "chant",
-    icon: "",
+    icon: "🕯️",
     name: "Ritty",
     desc: "+2 essence per second",
     baseCost: 50,
@@ -1306,7 +1219,7 @@ const upgrades = [
   },
   {
     id: "relic",
-    icon: "",
+    icon: "♨️",
     name: "Ritualist",
     desc: "+5 essence per click",
     baseCost: 160,
@@ -1317,7 +1230,7 @@ const upgrades = [
   },
   {
     id: "altar",
-    icon: "â–°",
+    icon: "🥇",
     name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
@@ -1328,7 +1241,7 @@ const upgrades = [
   },
   {
     id: "mirror",
-    icon: "",
+    icon: "🌀",
     name: "Zealot",
     desc: "Invocation grants 35% more",
     baseCost: 1400,
@@ -2144,6 +2057,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
