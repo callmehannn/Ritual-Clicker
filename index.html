@@ -1077,7 +1077,7 @@ h2 {
           </div>
         </section>
 
-        <section class="daily-panel mobile-tab-panel" data-tab-panel="daily" aria-label="Daily login">
+        <section class="daily-panel mobile-tab-panel is-active" data-tab-panel="daily" aria-label="Daily login">
           <div class="section-heading">
             <h2>Daily Login</h2>
             <span id="dailyStatus">Ready</span>
@@ -1105,7 +1105,7 @@ h2 {
           </div>
         </section>
 
-        <section class="mobile-tab-panel is-active" data-tab-panel="upgrade">
+        <section class="mobile-tab-panel" data-tab-panel="upgrade">
           <div class="panel-heading">
             <h2>Ritual Tools</h2>
             <p id="statusText">Tap the sigil to start the circle.</p>
@@ -1151,8 +1151,8 @@ h2 {
         </section>
       </aside>
       <nav class="mobile-nav" aria-label="Mobile sections">
-        <button class="is-active" type="button" data-tab-target="upgrade">Upgrade</button>
-        <button type="button" data-tab-target="daily">Daily</button>
+        <button class="is-active" type="button" data-tab-target="daily">Daily</button>
+        <button type="button" data-tab-target="upgrade">Upgrade</button>
         <button type="button" data-tab-target="achievements">Achievements</button>
         <button type="button" data-tab-target="leaderboard">Leaderboard</button>
       </nav>
@@ -1513,7 +1513,7 @@ function render() {
     const cost = getCost(upgrade);
     card.disabled = state.essence < cost;
     card.querySelector(".upgrade-meta").textContent = `Owned ${owned}`;
-    card.querySelector(".upgrade-cost").textContent = format(cost);
+    card.querySelector(".upgrade-cost").textContent = `Cost ${format(cost)}`;
   });
 
   saveState();
@@ -1590,7 +1590,14 @@ async function connectWallet({ mode }) {
 
 async function getWalletProvider() {
   if (window.ethereum) return window.ethereum;
+  if (!canUseWalletConnectHere()) {
+    throw new Error("WalletConnect needs the deployed HTTPS website. Upload to Vercel first, then open that link in Chrome.");
+  }
   return getWalletConnectProvider();
+}
+
+function canUseWalletConnectHere() {
+  return location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
 }
 
 async function getWalletConnectProvider() {
@@ -1627,17 +1634,23 @@ async function signInAndSyncWallet(address, mode, provider) {
   }
 
   nodes.accountStatus.textContent = "Sign to sync progress...";
-  const { data, error } = await runWithEthereumProvider(provider, () =>
-    supabaseClient.auth.signInWithWeb3({
-      chain: "ethereum",
-      statement: "Sign in to Ritual Clicker to sync your progress across devices.",
-    }),
-  );
+  try {
+    const { data, error } = await runWithEthereumProvider(provider, () =>
+      supabaseClient.auth.signInWithWeb3({
+        chain: "ethereum",
+        statement: "Sign in to Ritual Clicker to sync your progress across devices.",
+      }),
+    );
 
-  if (error) throw error;
+    if (error) throw error;
 
-  cloudSession = data.session;
-  await syncCloudProgress(address, mode);
+    cloudSession = data.session;
+    await syncCloudProgress(address, mode);
+  } catch (error) {
+    console.warn("Cloud wallet sync failed", error);
+    nodes.accountStatus.textContent = `Wallet connected. Cloud sync failed: ${getReadableError(error)}`;
+    saveState();
+  }
 }
 
 async function runWithEthereumProvider(provider, action) {
@@ -1696,8 +1709,16 @@ function getWalletErrorMessage(error, mode) {
   if (error?.code === -32002) return "Open MetaMask to finish the pending request";
   if (`${error?.message || ""}`.toLowerCase().includes("provider")) return "Enable Web3 provider in Supabase";
   if (`${error?.message || ""}`.toLowerCase().includes("redirect")) return "Add your Vercel URL to Supabase redirects";
+  if (`${error?.message || ""}`.includes("WalletConnect needs")) return error.message;
   if (mode === "ritual") return "Could not add Ritual Testnet";
   return "Could not connect wallet";
+}
+
+function getReadableError(error) {
+  const message = `${error?.message || error || ""}`.trim();
+  if (!message) return "check Supabase setup";
+  if (message.length > 120) return `${message.slice(0, 117)}...`;
+  return message;
 }
 
 async function initializeCloudSession() {
@@ -2109,6 +2130,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
