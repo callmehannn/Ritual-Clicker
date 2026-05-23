@@ -1258,6 +1258,7 @@ h2 {
 const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
+const legacySaveKey = "ritual-clicker-state-v2";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
@@ -1917,6 +1918,7 @@ async function syncCloudProgress(address, mode) {
     if (error) throw error;
 
     const remoteState = normalizeState(data?.[0]?.progress);
+    const legacyState = loadLegacyStateForWallet(address);
     const account = {
       type: mode,
       label: shortenAddress(address),
@@ -1929,10 +1931,19 @@ async function syncCloudProgress(address, mode) {
         account,
         ritualTestnetConnected: mode === "ritual" || remoteState.ritualTestnetConnected,
       });
-      saveState();
-    } else {
+      await saveCloudState({ force: true });
+    } else if (!remoteState && legacyState) {
+      Object.assign(state, {
+        ...legacyState,
+        account,
+        ritualTestnetConnected: mode === "ritual" || legacyState.ritualTestnetConnected,
+      });
+      await saveCloudState({ force: true });
+    } else if (hasMeaningfulProgress(state)) {
       state.account = account;
       await saveCloudState({ force: true });
+    } else {
+      state.account = account;
     }
     await loadCloudLeaderboard();
     nodes.accountStatus.textContent = `Wallet synced: ${shortenAddress(address)}`;
@@ -2553,6 +2564,26 @@ function normalizeState(saved) {
 
 function saveState() {
   saveCloudState();
+}
+
+function loadLegacyStateForWallet(address) {
+  const walletAddress = address.toLowerCase();
+  const candidates = [
+    `${legacySaveKey}:wallet:${walletAddress}`,
+    legacySaveKey,
+  ];
+
+  for (const key of candidates) {
+    try {
+      const saved = normalizeState(JSON.parse(localStorage.getItem(key)));
+      if (!saved || !hasMeaningfulProgress(saved)) continue;
+      const savedAddress = saved.account?.address?.toLowerCase();
+      if (savedAddress && savedAddress !== walletAddress) continue;
+      return saved;
+    } catch {}
+  }
+
+  return null;
 }
 
 function hasMeaningfulProgress(currentState) {
