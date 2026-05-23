@@ -1264,6 +1264,7 @@ const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
 const ritualAchievementsContractAddress = "0x989bb911bF43679037a277b403291612BA8eecAB";
+const ritualInvocationContractAddress = "0x841D0428871858a4065e73BB866301d1Dd559DCe";
 const dailyRitualAbi = [
   "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
   "function claimDaily() returns (uint256 reward, uint256 streak)",
@@ -1276,6 +1277,10 @@ const ritualScoreAbi = [
 const ritualAchievementsAbi = [
   "function claimAchievement(string achievementId) returns (bool claimedNow)",
   "function hasClaimed(address player, string achievementId) view returns (bool)",
+];
+const ritualInvocationAbi = [
+  "function invokeRite(uint256 reward, uint256 totalClicks, uint256 totalEarned) returns (uint256 count)",
+  "function getInvocation(address player) view returns (uint256 count, uint256 totalReward, uint256 lastReward, uint256 lastTotalClicks, uint256 lastTotalEarned, uint256 lastInvokedAt)",
 ];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
@@ -1463,17 +1468,67 @@ nodes.sigilButton.addEventListener("click", (event) => {
   render();
 });
 
-nodes.invokeButton.addEventListener("click", () => {
+nodes.invokeButton.addEventListener("click", invokeRite);
+
+async function invokeRite() {
   if (state.focus < 100) return;
   const reward = Math.ceil((state.perClick * 25 + state.perSecond * 12 + 75) * state.invokeBonus);
+
+  if (ritualInvocationContractAddress) {
+    await invokeRiteOnchain(reward);
+    return;
+  }
+
+  nodes.accountStatus.textContent = "Deploy RitualInvocation contract first";
+  addLog("Invoke the Rite needs RitualInvocation.sol deployed before it can be onchain.");
+  completeInvokeReward(reward);
+  addLog(`Invocation completed locally. Essence surges +${format(reward)}.`);
+  render();
+}
+
+async function invokeRiteOnchain(reward) {
+  setWalletBusy(true, "Invoking the Rite...");
+  nodes.invokeButton.disabled = true;
+  nodes.invokeButton.textContent = "Confirm in wallet...";
+
+  try {
+    const provider = await getWalletProvider();
+    const accounts = await getWalletAccounts(provider);
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    await switchOrAddRitualTestnet(provider);
+    attachWalletAccount(address, "ritual");
+
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const contract = new Contract(ritualInvocationContractAddress, ritualInvocationAbi, signer);
+    const tx = await contract.invokeRite(Math.floor(reward), Math.floor(state.totalClicks), Math.floor(state.totalEarned + reward));
+    nodes.invokeButton.textContent = "Waiting onchain...";
+    await tx.wait();
+
+    completeInvokeReward(reward);
+    nodes.accountStatus.textContent = "Rite invoked onchain";
+    addLog(`Onchain Invocation completed. Essence surges +${format(reward)}.`);
+    render();
+  } catch (error) {
+    const message = getReadableError(error);
+    nodes.accountStatus.textContent = `Invocation failed: ${message}`;
+    addLog(`Onchain Invocation failed: ${message}`);
+    render();
+  } finally {
+    setWalletBusy(false);
+  }
+}
+
+function completeInvokeReward(reward) {
   state.essence += reward;
   state.totalEarned += reward;
   state.focus = 0;
   state.multiplier = 2;
   state.multiplierEndsAt = Date.now() + 15000;
-  addLog(`Invocation completed. Essence surges +${format(reward)}.`);
-  render();
-});
+}
 
 if (nodes.resetButton) {
   nodes.resetButton.addEventListener("click", () => {
@@ -1598,6 +1653,7 @@ function render() {
   nodes.focusText.textContent = `${Math.floor(state.focus)}%`;
   nodes.focusFill.style.width = `${state.focus}%`;
   nodes.invokeButton.disabled = state.focus < 100;
+  nodes.invokeButton.textContent = "Invoke the Rite";
   nodes.statusText.textContent = getStatusText();
   renderAccount();
   renderDailyLogin();
@@ -1861,16 +1917,18 @@ async function syncCloudProgress(address, mode) {
   if (!supabaseClient || !cloudSession?.user?.id || isLoadingCloudState) return;
 
   isLoadingCloudState = true;
+  const walletAddress = address.toLowerCase();
   try {
     const { data, error } = await supabaseClient
       .from(supabaseTable)
       .select("progress, wallet_address, updated_at")
-      .eq("user_id", cloudSession.user.id)
-      .maybeSingle();
+      .or(`user_id.eq.${cloudSession.user.id},wallet_address.eq.${walletAddress}`)
+      .order("updated_at", { ascending: false })
+      .limit(1);
 
     if (error) throw error;
 
-    const remoteState = normalizeState(data?.progress);
+    const remoteState = normalizeState(data?.[0]?.progress);
     const account = {
       type: mode,
       label: shortenAddress(address),
@@ -1889,9 +1947,10 @@ async function syncCloudProgress(address, mode) {
       await saveCloudState({ force: true });
     }
     await loadCloudLeaderboard();
+    nodes.accountStatus.textContent = `Wallet synced: ${shortenAddress(address)}`;
   } catch (error) {
     console.warn("Cloud sync failed", error);
-    nodes.accountStatus.textContent = "Wallet connected. Cloud table not ready.";
+    nodes.accountStatus.textContent = `Wallet connected. Cloud sync failed: ${getReadableError(error)}`;
   } finally {
     isLoadingCloudState = false;
   }
@@ -1921,7 +1980,7 @@ async function saveCloudState({ force = false } = {}) {
       progress: createPortableState(),
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" },
+    { onConflict: "wallet_address" },
   );
 
   if (error) {
