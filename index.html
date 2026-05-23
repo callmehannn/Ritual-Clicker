@@ -1566,7 +1566,7 @@ async function connectWallet({ mode }) {
 
   try {
     const provider = await getWalletProvider();
-    const accounts = await provider.request({ method: "eth_requestAccounts" });
+    const accounts = await getWalletAccounts(provider);
     const address = accounts?.[0];
     if (!address) throw new Error("No wallet address returned.");
 
@@ -1623,6 +1623,24 @@ async function getWalletConnectProvider() {
   });
 
   return walletConnectProvider;
+}
+
+async function getWalletAccounts(provider) {
+  if (provider === window.ethereum) {
+    return provider.request({ method: "eth_requestAccounts" });
+  }
+
+  if (!provider.session) {
+    await provider.connect();
+  }
+
+  if (provider.accounts?.length) return provider.accounts;
+
+  const accounts = await provider.request({ method: "eth_accounts" });
+  if (accounts?.length) return accounts;
+
+  await provider.connect();
+  return provider.accounts || [];
 }
 
 async function signInAndSyncWallet(address, mode, provider) {
@@ -2131,6 +2149,7 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
 
 
 
