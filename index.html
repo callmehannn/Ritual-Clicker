@@ -670,6 +670,16 @@ h2 {
   color: var(--bright);
 }
 
+.submit-score-button {
+  min-height: 44px;
+}
+
+.submit-score-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .daily-calendar-card {
   display: grid;
   grid-template-columns: 118px minmax(0, 1fr);
@@ -1147,6 +1157,10 @@ h2 {
             <h2>Leaderboard</h2>
             <span id="playerRank">Rank #1</span>
           </div>
+          <button class="login-button submit-score-button" id="submitScoreButton" type="button">
+            Submit Score Onchain
+          </button>
+          <p class="submit-score-status" id="submitScoreStatus">Best score is submitted from your connected wallet.</p>
           <ol id="leaderboardList"></ol>
         </section>
       </aside>
@@ -1179,10 +1193,15 @@ const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
+const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
 const dailyRitualAbi = [
   "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
   "function claimDaily() returns (uint256 reward, uint256 streak)",
   "function getPlayer(address player) view returns (uint256 lastClaimDay, uint256 streak, uint256 totalClaimed)",
+];
+const ritualScoreAbi = [
+  "function submitScore(uint256 totalEarned, uint256 totalClicks) returns (bool improved)",
+  "function getScore(address player) view returns (uint256 bestEssence, uint256 bestClicks, uint256 submittedAt)",
 ];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
@@ -1342,6 +1361,8 @@ const nodes = {
   achievementCount: document.querySelector("#achievementCount"),
   leaderboardList: document.querySelector("#leaderboardList"),
   playerRank: document.querySelector("#playerRank"),
+  submitScoreButton: document.querySelector("#submitScoreButton"),
+  submitScoreStatus: document.querySelector("#submitScoreStatus"),
   template: document.querySelector("#upgradeTemplate"),
   mobileNavButtons: document.querySelectorAll("[data-tab-target]"),
   mobileTabPanels: document.querySelectorAll("[data-tab-panel]"),
@@ -1445,6 +1466,8 @@ if (window.ethereum?.on) {
 }
 
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
+
+nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 
 nodes.mobileNavButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -2041,6 +2064,59 @@ function renderLeaderboard() {
       `,
     )
     .join("");
+  nodes.submitScoreButton.disabled = state.totalEarned <= 0;
+  nodes.submitScoreButton.textContent = ritualScoreContractAddress ? "Submit Score Onchain" : "Deploy Score Contract First";
+  if (!ritualScoreContractAddress) {
+    nodes.submitScoreStatus.textContent = "Score contract is not deployed yet.";
+  } else if (!state.account?.address) {
+    nodes.submitScoreStatus.textContent = "Connect wallet to submit your best score onchain.";
+  } else {
+    nodes.submitScoreStatus.textContent = `Ready to submit ${format(state.totalEarned)} total essence.`;
+  }
+}
+
+async function submitOnchainScore() {
+  if (!ritualScoreContractAddress) {
+    nodes.submitScoreStatus.textContent = "Deploy RitualScore.sol first, then add its contract address.";
+    return;
+  }
+  if (state.totalEarned <= 0) {
+    nodes.submitScoreStatus.textContent = "Play first, then submit your score.";
+    return;
+  }
+
+  setWalletBusy(true, "Submitting score...");
+  nodes.submitScoreButton.disabled = true;
+  nodes.submitScoreButton.textContent = "Confirm in wallet...";
+
+  try {
+    const provider = await getWalletProvider();
+    const accounts = await getWalletAccounts(provider);
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    await switchOrAddRitualTestnet(provider);
+    attachWalletAccount(address, "ritual");
+
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const contract = new Contract(ritualScoreContractAddress, ritualScoreAbi, signer);
+    const tx = await contract.submitScore(Math.floor(state.totalEarned), Math.floor(state.totalClicks));
+
+    nodes.submitScoreButton.textContent = "Waiting onchain...";
+    await tx.wait();
+    nodes.submitScoreStatus.textContent = "Score submitted on Ritual Testnet.";
+    addLog("Score submitted onchain.");
+    render();
+  } catch (error) {
+    const message = getReadableError(error);
+    nodes.submitScoreStatus.textContent = `Submit failed: ${message}`;
+    addLog(`Submit Score failed: ${message}`);
+    renderLeaderboard();
+  } finally {
+    setWalletBusy(false);
+  }
 }
 
 function setMobileTab(target) {
@@ -2279,6 +2355,8 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
+
 
 
 
