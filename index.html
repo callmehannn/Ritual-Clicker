@@ -215,8 +215,8 @@ h2 {
 
 .level-progress-readout {
   position: relative;
-  height: 18px;
-  margin-top: 6px;
+  height: 15px;
+  margin-top: 12px;
 }
 
 .level-progress-readout strong {
@@ -226,7 +226,7 @@ h2 {
   min-width: max-content;
   transform: translateX(-50%);
   color: var(--bright);
-  font-size: clamp(0.56rem, 1.45vw, 0.68rem);
+  font-size: clamp(0.46rem, 1.1vw, 0.56rem);
   line-height: 1;
 }
 
@@ -236,9 +236,9 @@ h2 {
   width: 0;
   height: 0;
   margin: 2px auto 0;
-  border-left: 2.5px solid transparent;
-  border-right: 2.5px solid transparent;
-  border-top: 4px solid var(--bright);
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  border-top: 3px solid var(--bright);
 }
 
 .level-progress-track span {
@@ -502,6 +502,7 @@ h2 {
 .upgrade-icon-relic {
   color: #40ffaf;
   background: rgba(64, 255, 175, 0.14);
+  filter: hue-rotate(92deg) saturate(1.8);
 }
 
 .upgrade-icon-chant {
@@ -511,34 +512,10 @@ h2 {
 }
 
 .upgrade-icon-altar {
-  position: relative;
-  color: transparent;
+  color: #ffd76a;
   background: rgba(255, 215, 106, 0.16);
-  font-size: 0;
-  overflow: hidden;
-}
-
-.upgrade-icon-altar::before {
-  content: "";
-  width: 34px;
-  height: 25px;
-  background:
-    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 11px 1px / 20px 7px no-repeat,
-    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 4px 9px / 20px 7px no-repeat,
-    linear-gradient(135deg, #fff4a8, #ffd76a 45%, #a66d13) 14px 17px / 20px 7px no-repeat;
-  filter: drop-shadow(0 0 7px rgba(255, 215, 106, 0.62));
-  transform: skewX(-10deg);
-}
-
-.upgrade-icon-altar::after {
-  content: "";
-  position: absolute;
-  width: 4px;
-  height: 22px;
-  background: rgba(255, 255, 255, 0.38);
-  transform: rotate(24deg);
-  left: 24px;
-  top: 16px;
+  font-size: 1.75rem;
+  text-shadow: 0 0 9px rgba(255, 215, 106, 0.6);
 }
 
 .upgrade-icon-mirror {
@@ -1118,7 +1095,7 @@ h2 {
           </div>
           <div class="level-progress-card">
             <div class="level-title-row">
-              <span class="label">Title</span>
+              <span class="label">Rank</span>
               <strong id="currentLevelTitle">Bitty</strong>
             </div>
             <div class="level-progress-readout">
@@ -1215,7 +1192,7 @@ h2 {
               <thead>
                 <tr>
                   <th>Level</th>
-                  <th>Title</th>
+                  <th>Rank</th>
                   <th>Total Click Needed</th>
                 </tr>
               </thead>
@@ -1338,7 +1315,7 @@ const upgrades = [
   },
   {
     id: "relic",
-    icon: "♨️",
+    icon: "🔥",
     name: "Ritualist",
     desc: "+5 essence per click",
     baseCost: 160,
@@ -1349,7 +1326,7 @@ const upgrades = [
   },
   {
     id: "altar",
-    icon: "🥇",
+    icon: "▰",
     name: "Radiant Ritualist",
     desc: "+11 essence per second",
     baseCost: 520,
@@ -2535,6 +2512,9 @@ function hasMeaningfulProgress(currentState) {
 </script>
   </body>
 </html>
+
+
+
 
 
 
