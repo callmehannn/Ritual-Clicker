@@ -1946,17 +1946,17 @@ async function syncCloudProgress(address, mode) {
         account,
         ritualTestnetConnected: mode === "ritual" || remoteState.ritualTestnetConnected,
       });
-      await saveCloudState({ force: true });
+      await saveCloudState({ force: true, silent: true });
     } else if (!remoteState && legacyState) {
       Object.assign(state, {
         ...legacyState,
         account,
         ritualTestnetConnected: mode === "ritual" || legacyState.ritualTestnetConnected,
       });
-      await saveCloudState({ force: true });
+      await saveCloudState({ force: true, silent: true });
     } else if (hasMeaningfulProgress(state)) {
       state.account = account;
-      await saveCloudState({ force: true });
+      await saveCloudState({ force: true, silent: true });
     } else {
       state.account = account;
     }
@@ -1975,48 +1975,52 @@ function shouldUseRemoteState(remoteState, localState) {
   return (remoteState.totalEarned || 0) > (localState.totalEarned || 0);
 }
 
-async function saveCloudState({ force = false } = {}) {
-  if (!supabaseClient || !cloudSession?.user?.id || !state.account?.address || isLoadingCloudState) return;
+async function saveCloudState({ force = false, skipRemoteCheck = false, silent = false } = {}) {
+  if (!supabaseClient || !cloudSession?.user?.id || !state.account?.address) return false;
+  if (isLoadingCloudState && !force) return false;
 
   if (!force) {
     clearTimeout(cloudSaveTimer);
-    cloudSaveTimer = setTimeout(() => saveCloudState({ force: true }), 1300);
-    return;
+    cloudSaveTimer = setTimeout(() => saveCloudState({ force: true, silent: true }), 1300);
+    return false;
   }
 
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = null;
   const walletAddress = state.account.address.toLowerCase();
 
-  const { data: currentRows, error: fetchError } = await supabaseClient
-    .from(supabaseTable)
-    .select("progress")
-    .eq("wallet_address", walletAddress)
-    .limit(1);
+  if (!skipRemoteCheck) {
+    const { data: currentRows, error: fetchError } = await supabaseClient
+      .from(supabaseTable)
+      .select("progress")
+      .eq("wallet_address", walletAddress)
+      .limit(1);
 
-  if (fetchError) {
-    console.warn("Cloud save precheck failed", fetchError);
-    nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
-    return;
+    if (fetchError) {
+      console.warn("Cloud save precheck failed", fetchError);
+      nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
+      return false;
+    }
+
+    const remoteState = normalizeState(currentRows?.[0]?.progress);
+    if (remoteState && (remoteState.totalEarned || 0) > (state.totalEarned || 0)) {
+      const account = state.account;
+      Object.assign(state, {
+        ...remoteState,
+        account,
+        ritualTestnetConnected: state.ritualTestnetConnected || remoteState.ritualTestnetConnected,
+      });
+      render();
+      return false;
+    }
   }
 
-  const remoteState = normalizeState(currentRows?.[0]?.progress);
-  if (remoteState && (remoteState.totalEarned || 0) > (state.totalEarned || 0)) {
-    const account = state.account;
-    Object.assign(state, {
-      ...remoteState,
-      account,
-      ritualTestnetConnected: state.ritualTestnetConnected || remoteState.ritualTestnetConnected,
-    });
-    render();
-    return;
-  }
-
+  const progress = createPortableState();
   const { error } = await supabaseClient.from(supabaseTable).upsert(
     {
       user_id: cloudSession.user.id,
       wallet_address: walletAddress,
-      progress: createPortableState(),
+      progress,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "wallet_address" },
@@ -2025,14 +2029,17 @@ async function saveCloudState({ force = false } = {}) {
   if (error) {
     console.warn("Cloud save failed", error);
     nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
+    return false;
   } else {
     await loadCloudLeaderboard();
+    if (!silent) nodes.accountStatus.textContent = `Saved: ${format(progress.totalEarned)} total essence`;
+    return true;
   }
 }
 
 async function flushCloudSave() {
-  if (!cloudSession?.user?.id || !state.account?.address) return;
-  await saveCloudState({ force: true });
+  if (!cloudSession?.user?.id || !state.account?.address) return false;
+  return saveCloudState({ force: true });
 }
 
 async function loadCloudLeaderboard() {
