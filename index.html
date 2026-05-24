@@ -1561,6 +1561,8 @@ nodes.metaMaskButton.addEventListener("click", () => connectWallet({ mode: "meta
 nodes.ritualTestnetButton.addEventListener("click", () => connectWallet({ mode: "ritual" }));
 
 nodes.logoutButton.addEventListener("click", async () => {
+  nodes.accountStatus.textContent = "Saving progress...";
+  await flushCloudSave();
   if (supabaseClient) {
     await supabaseClient.auth.signOut({ scope: "local" });
   }
@@ -1574,6 +1576,8 @@ if (window.ethereum?.on) {
   window.ethereum.on("accountsChanged", async (accounts) => {
     const address = accounts?.[0];
     if (!address) {
+      nodes.accountStatus.textContent = "Saving progress...";
+      await flushCloudSave();
       if (supabaseClient) {
         await supabaseClient.auth.signOut({ scope: "local" });
       }
@@ -1584,10 +1588,21 @@ if (window.ethereum?.on) {
     }
 
     nodes.accountStatus.textContent = "Wallet changed. Connect again to sync.";
+    await flushCloudSave();
     Object.assign(state, defaultState());
     render();
   });
 }
+
+window.addEventListener("pagehide", () => {
+  flushCloudSave();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushCloudSave();
+  }
+});
 
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 
@@ -2013,6 +2028,11 @@ async function saveCloudState({ force = false } = {}) {
   } else {
     await loadCloudLeaderboard();
   }
+}
+
+async function flushCloudSave() {
+  if (!cloudSession?.user?.id || !state.account?.address) return;
+  await saveCloudState({ force: true });
 }
 
 async function loadCloudLeaderboard() {
