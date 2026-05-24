@@ -1402,7 +1402,7 @@ h2 {
 
         <div class="ritual-meter" aria-label="Ritual meter">
           <div class="meter-label">
-            <span>Ritual Focus</span>
+            <span>Boost Charge</span>
             <strong id="focusText">0%</strong>
           </div>
           <div class="meter-track">
@@ -1411,7 +1411,7 @@ h2 {
         </div>
 
         <button class="primary-action" id="invokeButton" type="button" disabled>
-          Invoke the Rite
+          Activate 2x Boost
         </button>
       </section>
 
@@ -1675,7 +1675,7 @@ const upgrades = [
     id: "mirror",
     icon: "🌀",
     name: "Zealot",
-    desc: "Invocation grants 35% more",
+    desc: "2x Boost reward grants 35% more",
     baseCost: 1400,
     scale: 1.85,
     apply(state) {
@@ -1726,7 +1726,7 @@ const milestones = [
   { at: 500, text: "The air thickens, as if the room is holding its breath." },
   { at: 2000, text: "The ritual circle now recognizes your name." },
   { at: 7500, text: "The altar shadow moves faster than the light." },
-  { at: 25000, text: "The Invocation becomes a low thunder behind the wall." },
+  { at: 25000, text: "The 2x Boost becomes a low thunder behind the wall." },
 ];
 
 const state = loadState();
@@ -1824,14 +1824,14 @@ async function invokeRite() {
   }
 
   nodes.accountStatus.textContent = "Deploy RitualInvocation contract first";
-  addLog("Invoke the Rite needs RitualInvocation.sol deployed before it can be onchain.");
+  addLog("Activate 2x Boost needs RitualInvocation.sol deployed before it can be onchain.");
   completeInvokeReward(reward);
-  addLog(`Invocation completed locally. Essence surges +${format(reward)}.`);
+  addLog(`2x Boost activated locally. Essence surges +${format(reward)}.`);
   render();
 }
 
 async function invokeRiteOnchain(reward) {
-  setWalletBusy(true, "Invoking the Rite...");
+  setWalletBusy(true, "Activating 2x Boost...");
   nodes.invokeButton.disabled = true;
   nodes.invokeButton.textContent = "Confirm in wallet...";
 
@@ -1853,13 +1853,13 @@ async function invokeRiteOnchain(reward) {
     await tx.wait();
 
     completeInvokeReward(reward);
-    nodes.accountStatus.textContent = "Rite invoked onchain";
-    addLog(`Onchain Invocation completed. Essence surges +${format(reward)}.`);
+    nodes.accountStatus.textContent = "2x Boost activated onchain";
+    addLog(`Onchain 2x Boost activated. Essence surges +${format(reward)}.`);
     render();
   } catch (error) {
     const message = getReadableError(error);
-    nodes.accountStatus.textContent = `Invocation failed: ${message}`;
-    addLog(`Onchain Invocation failed: ${message}`);
+    nodes.accountStatus.textContent = `2x Boost failed: ${message}`;
+    addLog(`Onchain 2x Boost failed: ${message}`);
     render();
   } finally {
     setWalletBusy(false);
@@ -2019,7 +2019,7 @@ function render() {
   nodes.focusText.textContent = `${Math.floor(state.focus)}%`;
   nodes.focusFill.style.width = `${state.focus}%`;
   nodes.invokeButton.disabled = state.focus < 100;
-  nodes.invokeButton.textContent = "Invoke the Rite";
+  nodes.invokeButton.textContent = "Activate 2x Boost";
   nodes.statusText.textContent = getStatusText();
   renderAccount();
   renderDailyLogin();
@@ -2059,8 +2059,8 @@ function getCost(upgrade) {
 }
 
 function getStatusText() {
-  if (state.multiplier > 1) return "Invocation active: all gains are doubled for a short time.";
-  if (state.focus >= 100) return "Focus is full. The Invocation is ready.";
+  if (state.multiplier > 1) return "2x Boost active: clicks and passive income are doubled for 15 seconds.";
+  if (state.focus >= 100) return "Boost Charge is full. Activate 2x Boost when ready.";
   if (state.perSecond > 0) return "The chants are working on their own. The sigil still hungers.";
   return "Tap the sigil to start the circle.";
 }
@@ -2887,7 +2887,7 @@ function renderAchievements() {
       const claimedOnchain = Boolean(state.onchainAchievements[achievement.id]);
       const claimLabel = ritualAchievementsContractAddress
         ? claimedOnchain
-          ? "Onchain"
+          ? "Claimed"
           : "Claim"
         : "Deploy";
       return `
