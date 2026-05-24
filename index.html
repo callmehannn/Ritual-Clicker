@@ -1460,6 +1460,7 @@ nodes.sigilButton.addEventListener("click", (event) => {
   state.essence += gain;
   state.totalEarned += gain;
   state.focus = Math.min(100, state.focus + 3 + state.perClick * 0.05);
+  touchProgress();
   popText(event.clientX, event.clientY, `+${format(gain)}`);
   nodes.sigilButton.classList.add("clicked");
   setTimeout(() => nodes.sigilButton.classList.remove("clicked"), 120);
@@ -1527,6 +1528,7 @@ function completeInvokeReward(reward) {
   state.focus = 0;
   state.multiplier = 2;
   state.multiplierEndsAt = Date.now() + 15000;
+  touchProgress();
 }
 
 if (nodes.resetButton) {
@@ -1633,6 +1635,7 @@ function tick() {
     state.essence += gain;
     state.totalEarned += gain;
     state.focus = Math.min(100, state.focus + 0.8 + state.perSecond * 0.01);
+    touchProgress();
     checkMilestones();
   }
 
@@ -1691,6 +1694,7 @@ function buyUpgrade(id) {
   state.essence -= cost;
   state.owned[id] = (state.owned[id] || 0) + 1;
   upgrade.apply(state);
+  touchProgress();
   addLog(`${upgrade.name} joined the circle.`);
   render();
 }
@@ -2101,6 +2105,7 @@ function mergeCurrentPlayerIntoLeaderboard(entries) {
 }
 
 function createPortableState() {
+  if (hasMeaningfulProgress(state)) touchProgress();
   return {
     ...state,
     log: [],
@@ -2192,6 +2197,7 @@ async function claimOnchainDailyReward() {
     state.essence += rewardNumber;
     state.totalEarned += rewardNumber;
     state.ritualTestnetConnected = true;
+    touchProgress();
     addLog(`Onchain Daily claimed. Essence +${format(rewardNumber)}.`);
     render();
   } catch (error) {
@@ -2578,6 +2584,7 @@ function defaultState() {
     openedDays: [],
     dailyLastClaimDate: "",
     dailyStreak: 0,
+    progressUpdatedAt: 0,
     ritualTestnetConnected: false,
     onchainAchievements: {},
     log: [],
@@ -2602,11 +2609,16 @@ function normalizeState(saved) {
     openedDays: Array.isArray(saved.openedDays) ? saved.openedDays : base.openedDays,
     dailyLastClaimDate: typeof saved.dailyLastClaimDate === "string" ? saved.dailyLastClaimDate : base.dailyLastClaimDate,
     dailyStreak: Number.isFinite(saved.dailyStreak) ? saved.dailyStreak : base.dailyStreak,
+    progressUpdatedAt: Number.isFinite(saved.progressUpdatedAt) ? saved.progressUpdatedAt : base.progressUpdatedAt,
   };
 }
 
 function saveState() {
   saveCloudState();
+}
+
+function touchProgress() {
+  state.progressUpdatedAt = Date.now();
 }
 
 function loadLegacyStateForWallet(address) {
@@ -2633,29 +2645,31 @@ function mergeProgressStates(...states) {
   const validStates = states.filter((item) => item && typeof item === "object");
   if (!validStates.length) return null;
 
-  const merged = normalizeState(validStates[0]);
-  validStates.slice(1).forEach((item) => {
-    const next = normalizeState(item);
-    if (!next) return;
+  const normalizedStates = validStates.map((item) => normalizeState(item)).filter(Boolean);
+  const spendState = normalizedStates.reduce((latest, item) => {
+    const latestStamp = latest.progressUpdatedAt || 0;
+    const itemStamp = item.progressUpdatedAt || 0;
+    if (itemStamp !== latestStamp) return itemStamp > latestStamp ? item : latest;
+    const latestOwned = Object.values(latest.owned || {}).reduce((sum, count) => sum + count, 0);
+    const itemOwned = Object.values(item.owned || {}).reduce((sum, count) => sum + count, 0);
+    if (itemOwned !== latestOwned) return itemOwned > latestOwned ? item : latest;
+    return (item.totalEarned || 0) >= (latest.totalEarned || 0) ? item : latest;
+  }, normalizedStates[0]);
 
-    merged.essence = Math.max(merged.essence || 0, next.essence || 0);
+  const merged = normalizeState(spendState);
+  normalizedStates.forEach((next) => {
     merged.totalEarned = Math.max(merged.totalEarned || 0, next.totalEarned || 0);
     merged.totalClicks = Math.max(merged.totalClicks || 0, next.totalClicks || 0);
-    merged.perClick = Math.max(merged.perClick || 1, next.perClick || 1);
-    merged.perSecond = Math.max(merged.perSecond || 0, next.perSecond || 0);
     merged.focus = Math.max(merged.focus || 0, next.focus || 0);
-    merged.invokeBonus = Math.max(merged.invokeBonus || 1, next.invokeBonus || 1);
     merged.playSeconds = Math.max(merged.playSeconds || 0, next.playSeconds || 0);
     merged.dailyStreak = Math.max(merged.dailyStreak || 0, next.dailyStreak || 0);
+    merged.progressUpdatedAt = Math.max(merged.progressUpdatedAt || 0, next.progressUpdatedAt || 0);
     merged.ritualTestnetConnected = merged.ritualTestnetConnected || next.ritualTestnetConnected;
     merged.dailyLastClaimDate = [merged.dailyLastClaimDate, next.dailyLastClaimDate].sort().pop() || "";
     merged.openedDays = [...new Set([...(merged.openedDays || []), ...(next.openedDays || [])])];
     merged.milestones = [...new Set([...(merged.milestones || []), ...(next.milestones || [])])];
     merged.achievements = { ...(merged.achievements || {}), ...(next.achievements || {}) };
     merged.onchainAchievements = { ...(merged.onchainAchievements || {}), ...(next.onchainAchievements || {}) };
-    Object.keys(next.owned || {}).forEach((id) => {
-      merged.owned[id] = Math.max(merged.owned[id] || 0, next.owned[id] || 0);
-    });
   });
 
   return merged;
