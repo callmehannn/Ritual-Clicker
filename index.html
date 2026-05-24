@@ -1715,6 +1715,7 @@ const ritualLlmPrecompileAddress = "0x0000000000000000000000000000000000000802";
 const ritualWalletAddress = "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948";
 const teeServiceRegistryAddress = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const ritualLlmModel = "zai-org/GLM-4.7-FP8";
+const ritualLlmConvoHistory = ["gcs", "ritual-clicker/daily-quest.jsonl", "GCS_CREDS"];
 const dailyRitualAbi = [
   "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
   "function claimDaily() returns (uint256 reward, uint256 streak)",
@@ -3076,7 +3077,7 @@ function encodeRitualLlmQuestRequest(coder, executor, quest) {
       1000,
       "",
       false,
-      ["", "", ""],
+      ritualLlmConvoHistory,
     ],
   );
 }
