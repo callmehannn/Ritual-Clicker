@@ -1703,7 +1703,7 @@ function renderAccount() {
   }
 
   const provider = state.account.type === "metamask" ? "MetaMask" : state.account.type === "ritual" ? "Ritual Testnet" : "X";
-  nodes.accountStatus.textContent = `${provider}: ${state.account.label}`;
+  nodes.accountStatus.textContent = cloudSession ? `Wallet synced: ${state.account.label}` : `${provider}: ${state.account.label}`;
   if (nodes.xLoginButton) nodes.xLoginButton.hidden = true;
   nodes.metaMaskButton.hidden = true;
   nodes.ritualTestnetButton.hidden = true;
@@ -1911,7 +1911,7 @@ async function syncCloudProgress(address, mode) {
     const { data, error } = await supabaseClient
       .from(supabaseTable)
       .select("progress, wallet_address, updated_at")
-      .or(`user_id.eq.${cloudSession.user.id},wallet_address.eq.${walletAddress}`)
+      .eq("wallet_address", walletAddress)
       .order("updated_at", { ascending: false })
       .limit(1);
 
@@ -1971,11 +1971,36 @@ async function saveCloudState({ force = false } = {}) {
 
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = null;
+  const walletAddress = state.account.address.toLowerCase();
+
+  const { data: currentRows, error: fetchError } = await supabaseClient
+    .from(supabaseTable)
+    .select("progress")
+    .eq("wallet_address", walletAddress)
+    .limit(1);
+
+  if (fetchError) {
+    console.warn("Cloud save precheck failed", fetchError);
+    nodes.accountStatus.textContent = "Wallet connected. Cloud save failed.";
+    return;
+  }
+
+  const remoteState = normalizeState(currentRows?.[0]?.progress);
+  if (remoteState && (remoteState.totalEarned || 0) > (state.totalEarned || 0)) {
+    const account = state.account;
+    Object.assign(state, {
+      ...remoteState,
+      account,
+      ritualTestnetConnected: state.ritualTestnetConnected || remoteState.ritualTestnetConnected,
+    });
+    render();
+    return;
+  }
 
   const { error } = await supabaseClient.from(supabaseTable).upsert(
     {
       user_id: cloudSession.user.id,
-      wallet_address: state.account.address.toLowerCase(),
+      wallet_address: walletAddress,
       progress: createPortableState(),
       updated_at: new Date().toISOString(),
     },
