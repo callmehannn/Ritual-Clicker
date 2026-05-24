@@ -1710,6 +1710,7 @@ const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
 const ritualAchievementsContractAddress = "0x989bb911bF43679037a277b403291612BA8eecAB";
 const ritualInvocationContractAddress = "0x841D0428871858a4065e73BB866301d1Dd559DCe";
+const ritualDailyQuestLlmContractAddress = new URLSearchParams(window.location.search).get("llm") || "";
 const ritualLlmPrecompileAddress = "0x0000000000000000000000000000000000000802";
 const ritualWalletAddress = "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948";
 const teeServiceRegistryAddress = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
@@ -1730,6 +1731,10 @@ const ritualAchievementsAbi = [
 const ritualInvocationAbi = [
   "function invokeRite(uint256 reward, uint256 totalClicks, uint256 totalEarned) returns (uint256 count)",
   "function getInvocation(address player) view returns (uint256 count, uint256 totalReward, uint256 lastReward, uint256 lastTotalClicks, uint256 lastTotalEarned, uint256 lastInvokedAt)",
+];
+const ritualDailyQuestLlmAbi = [
+  "event DailyQuestGenerated(address indexed admin, string content)",
+  "function generate(bytes llmInput) returns (string content)",
 ];
 const ritualWalletAbi = [
   "function deposit(uint256 lockDuration) payable",
@@ -2915,21 +2920,22 @@ async function generateDailyQuestWithRitualLlm() {
     await switchOrAddRitualTestnet(provider);
     attachWalletAccount(address, "ritual");
 
-    const { AbiCoder, BrowserProvider, Contract, Interface, id } = await import("https://esm.sh/ethers@6.13.5");
+    if (!ritualDailyQuestLlmContractAddress) {
+      throw new Error("Deploy RitualDailyQuestLLM.sol first, then open admin mode with ?admin=1&llm=CONTRACT_ADDRESS.");
+    }
+
+    const { AbiCoder, BrowserProvider, Contract, Interface } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
     const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
-    const tx = await signer.sendTransaction({
-      to: ritualLlmPrecompileAddress,
-      data: encoded,
-      gasLimit: 5000000,
-    });
+    const llmContract = new Contract(ritualDailyQuestLlmContractAddress, ritualDailyQuestLlmAbi, signer);
+    const tx = await llmContract.generate(encoded, { gasLimit: 6000000 });
 
     nodes.dailyQuestGenerateButton.textContent = "Waiting Ritual LLM...";
     const receipt = await tx.wait();
-    const llmText = decodeRitualLlmReceipt(AbiCoder.defaultAbiCoder(), id, receipt);
+    const llmText = readRitualLlmGeneratedContent(receipt, new Interface(ritualDailyQuestLlmAbi));
     const generated = parseRitualQuestJson(llmText);
 
     quest.title = generated.title;
@@ -2950,6 +2956,17 @@ async function generateDailyQuestWithRitualLlm() {
     nodes.dailyQuestGenerateButton.disabled = false;
     setWalletBusy(false);
   }
+}
+
+function readRitualLlmGeneratedContent(receipt, contractInterface) {
+  for (const log of receipt.logs || []) {
+    try {
+      const parsed = contractInterface.parseLog(log);
+      if (parsed?.name === "DailyQuestGenerated") return parsed.args.content;
+    } catch {}
+  }
+
+  throw new Error("Ritual LLM generated no event content.");
 }
 
 async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
