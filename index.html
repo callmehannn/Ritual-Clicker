@@ -1257,7 +1257,7 @@ h2 {
         <section class="achievements mobile-tab-panel" data-tab-panel="achievements" aria-label="Achievements">
           <div class="section-heading">
             <h2>Achievements</h2>
-            <span id="achievementCount">0/17</span>
+            <span id="achievementCount">0/18</span>
           </div>
           <ol id="achievementsList"></ol>
         </section>
@@ -1422,6 +1422,7 @@ const achievements = [
   { id: "ritual-beginner", name: "Ritual Beginner", requirement: "100 clicks", isUnlocked: (state) => state.totalClicks >= 100 },
   { id: "finger-destroyer", name: "Finger Destroyer", requirement: "500 clicks", isUnlocked: (state) => state.totalClicks >= 500 },
   { id: "ritty-certified", name: "Ritty Certified", requirement: "Become Ritty", isUnlocked: () => hasReachedTitle("Ritty") },
+  { id: "ritualist-certified", name: "Ritualist Certified", requirement: "Become Ritualist", isUnlocked: () => hasReachedTitle("Ritualist") },
   { id: "sleep-temporary", name: "Sleep Is Temporary", requirement: "1,000 clicks", isUnlocked: (state) => state.totalClicks >= 1000 },
   { id: "ritual-maxxing", name: "Ritual Maxxing", requirement: "2,500 clicks", isUnlocked: (state) => state.totalClicks >= 2500 },
   { id: "infinite-grindset", name: "Infinite Grindset", requirement: "5,000 clicks", isUnlocked: (state) => state.totalClicks >= 5000 },
@@ -2471,6 +2472,7 @@ function getAchievementIcon(index, unlocked) {
     "ritual-beginner": "◇",
     "finger-destroyer": "☝",
     "ritty-certified": "🕯️",
+    "ritualist-certified": "🔥",
     "sleep-temporary": "☾",
     "ritual-maxxing": "⬡",
     "infinite-grindset": "∞",
