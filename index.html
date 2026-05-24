@@ -358,6 +358,14 @@ h2 {
   cursor: pointer;
 }
 
+.primary-action,
+.login-button,
+.upgrade-cost {
+  box-shadow:
+    inset 0 0 18px rgba(64, 255, 175, 0.12),
+    0 0 18px rgba(64, 255, 175, 0.1);
+}
+
 .primary-action:disabled {
   color: var(--muted);
   background: rgba(64, 255, 175, 0.06);
@@ -403,12 +411,33 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(64, 255, 175, 0.42);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(0, 0, 0, 0.36);
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.14), rgba(7, 115, 69, 0.28)),
+    rgba(0, 0, 0, 0.5);
   cursor: pointer;
   font-weight: 800;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+}
+
+.login-button:hover:not(:disabled),
+.primary-action:hover:not(:disabled) {
+  border-color: rgba(64, 255, 175, 0.72);
+  box-shadow:
+    inset 0 0 20px rgba(64, 255, 175, 0.16),
+    0 0 24px rgba(64, 255, 175, 0.18);
+}
+
+.login-button:active:not(:disabled),
+.primary-action:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.login-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
 }
 
 .sr-only {
@@ -550,8 +579,16 @@ h2 {
 
 .upgrade-cost {
   justify-self: end;
-  color: var(--bright);
+  min-width: 76px;
+  padding: 8px 10px;
+  border: 1px solid rgba(64, 255, 175, 0.46);
+  border-radius: 8px;
+  color: #02120b;
+  background: linear-gradient(135deg, var(--bright), var(--deep));
+  text-align: center;
   font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .leaderboard,
@@ -728,6 +765,8 @@ h2 {
 
 .submit-score-button {
   min-height: 44px;
+  color: #02120b;
+  background: linear-gradient(135deg, var(--bright), var(--deep));
 }
 
 .submit-score-status {
@@ -822,6 +861,8 @@ h2 {
 
 .daily-claim-button {
   grid-column: 1 / -1;
+  color: #02120b;
+  background: linear-gradient(135deg, var(--bright), var(--deep));
 }
 
 .daily-claim-button:disabled {
