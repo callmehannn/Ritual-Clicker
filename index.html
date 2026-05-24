@@ -2915,10 +2915,10 @@ async function generateDailyQuestWithRitualLlm() {
     await switchOrAddRitualTestnet(provider);
     attachWalletAccount(address, "ritual");
 
-    const { AbiCoder, BrowserProvider, Contract, id } = await import("https://esm.sh/ethers@6.13.5");
+    const { AbiCoder, BrowserProvider, Contract, Interface, id } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
-    const executor = await getRitualLlmExecutor(browserProvider, Contract);
+    const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
     const tx = await signer.sendTransaction({
@@ -2952,19 +2952,43 @@ async function generateDailyQuestWithRitualLlm() {
   }
 }
 
-async function getRitualLlmExecutor(browserProvider, ContractClass) {
+async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
   const registry = new ContractClass(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
-  let services = [];
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
+  const pickExecutor = (services) => {
+    const list = Array.isArray(services) ? services : [...services || []];
+    const active = list.find((service) => {
+      const address = typeof service === "string" ? service : service?.teeAddress || service?.[0];
+      const enabled = typeof service === "string" ? true : service?.active !== false && service?.[4] !== false;
+      return enabled && address && String(address).toLowerCase() !== zeroAddress;
+    });
+    return typeof active === "string" ? active : active?.teeAddress || active?.[0] || "";
+  };
 
-  try {
-    services = await registry.getActiveServicesByCapability(1);
-  } catch {
-    services = await registry.getServicesByCapability(1);
+  for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
+    try {
+      const services = await registry[method](1);
+      const executor = pickExecutor(services);
+      if (executor) return executor;
+    } catch {}
   }
 
-  const active = [...services].find((service) => service.active !== false && service.teeAddress && service.teeAddress !== "0x0000000000000000000000000000000000000000");
-  if (!active) throw new Error("No active Ritual LLM executor found.");
-  return active.teeAddress;
+  const rawInterface = new InterfaceClass([
+    "function getActiveServicesByCapability(uint8 capability) view returns (address[])",
+    "function getServicesByCapability(uint8 capability) view returns (address[])",
+  ]);
+
+  for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
+    try {
+      const data = rawInterface.encodeFunctionData(method, [1]);
+      const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
+      const [addresses] = coder.decode(["address[]"], result);
+      const executor = pickExecutor(addresses);
+      if (executor) return executor;
+    } catch {}
+  }
+
+  throw new Error("No active Ritual LLM executor found.");
 }
 
 function encodeRitualLlmQuestRequest(coder, executor, quest) {
