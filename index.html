@@ -1739,6 +1739,9 @@ const ritualDailyQuestLlmAbi = [
 ];
 const ritualWalletAbi = [
   "function deposit(uint256 lockDuration) payable",
+  "function depositFor(address user, uint256 lockDuration) payable",
+  "function balanceOf(address account) view returns (uint256)",
+  "function lockUntil(address account) view returns (uint256)",
 ];
 const teeServiceRegistryAbi = [
   "function getServicesByCapability(uint8 capability) view returns (tuple(address teeAddress, bytes publicKey, string endpoint, uint8[] capabilities, bool active)[])",
@@ -2891,11 +2894,14 @@ async function depositRitualLlmFee() {
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, signer);
-    const tx = await wallet.deposit(5000, { value: parseEther("0.02") });
+    const target = ritualDailyQuestLlmContractAddress || address;
+    const tx = ritualDailyQuestLlmContractAddress
+      ? await wallet.depositFor(target, 5000, { value: parseEther("0.02") })
+      : await wallet.deposit(5000, { value: parseEther("0.02") });
     nodes.dailyQuestDepositButton.textContent = "Waiting deposit...";
     await tx.wait();
     nodes.accountStatus.textContent = "Ritual LLM fee deposited";
-    addLog("Deposited 0.02 RITUAL to RitualWallet for LLM inference.");
+    addLog(`Deposited 0.02 RITUAL to RitualWallet for ${shortenAddress(target)}.`);
   } catch (error) {
     const message = getReadableError(error);
     nodes.accountStatus.textContent = `LLM deposit failed: ${message}`;
@@ -2928,6 +2934,11 @@ async function generateDailyQuestWithRitualLlm() {
     const { AbiCoder, BrowserProvider, Contract, Interface } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
+    const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, browserProvider);
+    const llmBalance = await wallet.balanceOf(ritualDailyQuestLlmContractAddress);
+    if (llmBalance <= 0n) {
+      throw new Error("LLM contract has no RitualWallet fee. Tap Deposit LLM Fee first.");
+    }
     const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
