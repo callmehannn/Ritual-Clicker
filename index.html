@@ -1163,10 +1163,16 @@ h2 {
   margin-top: auto;
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
   gap: 10px;
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.share-card-footer span:last-child {
+  max-width: 48%;
+  text-align: right;
 }
 
 .creator-credit {
@@ -1550,7 +1556,7 @@ h2 {
           </div>
           <div class="share-card-footer">
             <span id="shareAchievements">0/18 achievements</span>
-            <span>Ritual Clicker · Made by @callmehannnnnnn</span>
+            <span>Made by @callmehannnnnnn</span>
           </div>
         </section>
         <div class="share-actions">
@@ -2769,7 +2775,10 @@ async function renderShareCardCanvas() {
   context.font = "900 32px Arial, sans-serif";
   context.fillText(`${unlocked}/${achievements.length} achievements`, 78, 540);
   context.textAlign = "right";
-  context.fillText("Ritual Clicker · Made by @callmehannnnnnn", width - 78, 540);
+  context.font = "900 28px Arial, sans-serif";
+  context.fillText("Ritual Clicker", width - 78, 520);
+  context.font = "800 24px Arial, sans-serif";
+  context.fillText("Made by @callmehannnnnnn", width - 78, 560);
   context.textAlign = "left";
   return canvas;
 }
