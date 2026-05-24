@@ -1169,6 +1169,23 @@ h2 {
   font-weight: 800;
 }
 
+.creator-credit {
+  align-self: end;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(64, 255, 175, 0.2);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.creator-credit a {
+  color: var(--bright);
+  text-decoration: none;
+  text-shadow: 0 0 14px rgba(64, 255, 175, 0.34);
+}
+
 @keyframes floatUp {
   to {
     opacity: 0;
@@ -1490,6 +1507,7 @@ h2 {
           </button>
           <p class="submit-score-status" id="submitScoreStatus">Best score is submitted from your connected wallet.</p>
           <ol id="leaderboardList"></ol>
+          <p class="creator-credit">Made by X <a href="https://x.com/callmehannnnnnn" target="_blank" rel="noopener">@callmehannnnnnn</a></p>
         </section>
       </aside>
       <nav class="mobile-nav" aria-label="Mobile sections">
@@ -1532,7 +1550,7 @@ h2 {
           </div>
           <div class="share-card-footer">
             <span id="shareAchievements">0/18 achievements</span>
-            <span>Ritual Clicker</span>
+            <span>Ritual Clicker · Made by @callmehannnnnnn</span>
           </div>
         </section>
         <div class="share-actions">
@@ -2751,7 +2769,7 @@ async function renderShareCardCanvas() {
   context.font = "900 32px Arial, sans-serif";
   context.fillText(`${unlocked}/${achievements.length} achievements`, 78, 540);
   context.textAlign = "right";
-  context.fillText("Ritual Clicker", width - 78, 540);
+  context.fillText("Ritual Clicker · Made by @callmehannnnnnn", width - 78, 540);
   context.textAlign = "left";
   return canvas;
 }
