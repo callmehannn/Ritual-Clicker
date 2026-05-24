@@ -2918,7 +2918,7 @@ async function generateDailyQuestWithRitualLlm() {
     const { AbiCoder, BrowserProvider, Contract, id } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
-    const executor = await getRitualLlmExecutor(browserProvider);
+    const executor = await getRitualLlmExecutor(browserProvider, Contract);
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
     const tx = await signer.sendTransaction({
@@ -2952,8 +2952,8 @@ async function generateDailyQuestWithRitualLlm() {
   }
 }
 
-async function getRitualLlmExecutor(browserProvider) {
-  const registry = new Contract(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
+async function getRitualLlmExecutor(browserProvider, ContractClass) {
+  const registry = new ContractClass(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
   let services = [];
 
   try {
