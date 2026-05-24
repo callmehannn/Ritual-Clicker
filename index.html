@@ -1940,23 +1940,15 @@ async function syncCloudProgress(address, mode) {
       address,
     };
 
-    if (remoteState && shouldUseRemoteState(remoteState, state)) {
+    const mergedState = mergeProgressStates(remoteState, legacyState, hasMeaningfulProgress(state) ? state : null);
+
+    if (mergedState && hasMeaningfulProgress(mergedState)) {
       Object.assign(state, {
-        ...remoteState,
+        ...mergedState,
         account,
-        ritualTestnetConnected: mode === "ritual" || remoteState.ritualTestnetConnected,
+        ritualTestnetConnected: mode === "ritual" || mergedState.ritualTestnetConnected,
       });
-      await saveCloudState({ force: true, silent: true });
-    } else if (!remoteState && legacyState) {
-      Object.assign(state, {
-        ...legacyState,
-        account,
-        ritualTestnetConnected: mode === "ritual" || legacyState.ritualTestnetConnected,
-      });
-      await saveCloudState({ force: true, silent: true });
-    } else if (hasMeaningfulProgress(state)) {
-      state.account = account;
-      await saveCloudState({ force: true, silent: true });
+      await saveCloudState({ force: true, skipRemoteCheck: true, silent: true });
     } else {
       state.account = account;
     }
@@ -1989,6 +1981,7 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
   cloudSaveTimer = null;
   const walletAddress = state.account.address.toLowerCase();
 
+  let remoteState = null;
   if (!skipRemoteCheck) {
     const { data: currentRows, error: fetchError } = await supabaseClient
       .from(supabaseTable)
@@ -2002,20 +1995,18 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
       return false;
     }
 
-    const remoteState = normalizeState(currentRows?.[0]?.progress);
-    if (remoteState && (remoteState.totalEarned || 0) > (state.totalEarned || 0)) {
-      const account = state.account;
-      Object.assign(state, {
-        ...remoteState,
-        account,
-        ritualTestnetConnected: state.ritualTestnetConnected || remoteState.ritualTestnetConnected,
-      });
-      render();
-      return false;
-    }
+    remoteState = normalizeState(currentRows?.[0]?.progress);
   }
 
-  const progress = createPortableState();
+  const progress = mergeProgressStates(remoteState, createPortableState()) || createPortableState();
+  if (progress) {
+    const account = state.account;
+    Object.assign(state, {
+      ...progress,
+      account,
+      ritualTestnetConnected: state.ritualTestnetConnected || progress.ritualTestnetConnected,
+    });
+  }
   const { error } = await supabaseClient.from(supabaseTable).upsert(
     {
       user_id: cloudSession.user.id,
@@ -2032,7 +2023,7 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
     return false;
   } else {
     await loadCloudLeaderboard();
-    if (!silent) nodes.accountStatus.textContent = `Saved: ${format(progress.totalEarned)} total essence`;
+    if (!silent) nodes.accountStatus.textContent = `Saved: ${format(progress.essence)} essence`;
     return true;
   }
 }
@@ -2636,6 +2627,38 @@ function loadLegacyStateForWallet(address) {
   }
 
   return null;
+}
+
+function mergeProgressStates(...states) {
+  const validStates = states.filter((item) => item && typeof item === "object");
+  if (!validStates.length) return null;
+
+  const merged = normalizeState(validStates[0]);
+  validStates.slice(1).forEach((item) => {
+    const next = normalizeState(item);
+    if (!next) return;
+
+    merged.essence = Math.max(merged.essence || 0, next.essence || 0);
+    merged.totalEarned = Math.max(merged.totalEarned || 0, next.totalEarned || 0);
+    merged.totalClicks = Math.max(merged.totalClicks || 0, next.totalClicks || 0);
+    merged.perClick = Math.max(merged.perClick || 1, next.perClick || 1);
+    merged.perSecond = Math.max(merged.perSecond || 0, next.perSecond || 0);
+    merged.focus = Math.max(merged.focus || 0, next.focus || 0);
+    merged.invokeBonus = Math.max(merged.invokeBonus || 1, next.invokeBonus || 1);
+    merged.playSeconds = Math.max(merged.playSeconds || 0, next.playSeconds || 0);
+    merged.dailyStreak = Math.max(merged.dailyStreak || 0, next.dailyStreak || 0);
+    merged.ritualTestnetConnected = merged.ritualTestnetConnected || next.ritualTestnetConnected;
+    merged.dailyLastClaimDate = [merged.dailyLastClaimDate, next.dailyLastClaimDate].sort().pop() || "";
+    merged.openedDays = [...new Set([...(merged.openedDays || []), ...(next.openedDays || [])])];
+    merged.milestones = [...new Set([...(merged.milestones || []), ...(next.milestones || [])])];
+    merged.achievements = { ...(merged.achievements || {}), ...(next.achievements || {}) };
+    merged.onchainAchievements = { ...(merged.onchainAchievements || {}), ...(next.onchainAchievements || {}) };
+    Object.keys(next.owned || {}).forEach((id) => {
+      merged.owned[id] = Math.max(merged.owned[id] || 0, next.owned[id] || 0);
+    });
+  });
+
+  return merged;
 }
 
 function hasMeaningfulProgress(currentState) {
