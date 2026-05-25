@@ -2946,7 +2946,14 @@ async function generateDailyQuestWithRitualLlm() {
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
     const llmContract = new Contract(ritualDailyQuestLlmContractAddress, ritualDailyQuestLlmAbi, signer);
-    const tx = await llmContract.generate(encoded, { gasLimit: 6000000 });
+    let tx;
+    try {
+      tx = await llmContract.generate(encoded, { gasLimit: 6000000 });
+    } catch (error) {
+      if (!isInvalidAsyncPayloadError(error)) throw error;
+      nodes.dailyQuestGenerateButton.textContent = "Retrying async tx...";
+      tx = await sendRitualAsyncTransaction(provider, browserProvider, llmContract, address, encoded);
+    }
 
     nodes.dailyQuestGenerateButton.textContent = "Waiting Ritual LLM...";
     const receipt = await tx.wait();
@@ -2983,6 +2990,31 @@ function showRitualLlmDebug(message) {
   if (nodes.dailyQuestStatus) nodes.dailyQuestStatus.textContent = "LLM Failed";
   if (nodes.dailyQuestLore) nodes.dailyQuestLore.textContent = text;
   if (isAdminMode) window.alert(text);
+}
+
+function isInvalidAsyncPayloadError(error) {
+  const message = getReadableError(error).toLowerCase();
+  return message.includes("invalid async payload");
+}
+
+async function sendRitualAsyncTransaction(provider, browserProvider, contract, from, llmInput) {
+  const txData = contract.interface.encodeFunctionData("generate", [llmInput]);
+  const txHash = await provider.request({
+    method: "eth_sendTransaction",
+    params: [{
+      from,
+      to: ritualDailyQuestLlmContractAddress,
+      data: txData,
+      gas: "0x5B8D80",
+      type: "0x10",
+      asyncPayload: llmInput,
+    }],
+  });
+
+  return {
+    hash: txHash,
+    wait: () => browserProvider.waitForTransaction(txHash),
+  };
 }
 
 function readRitualLlmGeneratedContent(receipt, contractInterface) {
