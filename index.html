@@ -3052,7 +3052,7 @@ async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceCla
     const normalized = String(address).toLowerCase();
     if (normalized === zeroAddress) return false;
     if (!/^0x[0-9a-f]{40}$/.test(normalized)) return false;
-    return BigInt(normalized) > 255n;
+    return BigInt(normalized) > 0xffffffffffffn;
   };
   const pickExecutor = (services) => {
     const list = Array.isArray(services) ? services : [...services || []];
