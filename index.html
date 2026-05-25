@@ -3047,22 +3047,31 @@ function formatRitualBalance(value) {
 async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
   const registry = new ContractClass(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
   const zeroAddress = "0x0000000000000000000000000000000000000000";
+  const isUsableAddress = (address) => {
+    if (!address) return false;
+    const normalized = String(address).toLowerCase();
+    if (normalized === zeroAddress) return false;
+    if (!/^0x[0-9a-f]{40}$/.test(normalized)) return false;
+    return BigInt(normalized) > 255n;
+  };
   const pickExecutor = (services) => {
     const list = Array.isArray(services) ? services : [...services || []];
     const active = list.find((service) => {
       const address = typeof service === "string" ? service : service?.teeAddress || service?.[0];
       const enabled = typeof service === "string" ? true : service?.active !== false && service?.[4] !== false;
-      return enabled && address && String(address).toLowerCase() !== zeroAddress;
+      return enabled && isUsableAddress(address);
     });
     return typeof active === "string" ? active : active?.teeAddress || active?.[0] || "";
   };
 
-  for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
-    try {
-      const services = await registry[method](1);
-      const executor = pickExecutor(services);
-      if (executor) return executor;
-    } catch {}
+  for (const capability of [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+    for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
+      try {
+        const services = await registry[method](capability);
+        const executor = pickExecutor(services);
+        if (executor) return executor;
+      } catch {}
+    }
   }
 
   const rawInterface = new InterfaceClass([
@@ -3070,14 +3079,16 @@ async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceCla
     "function getServicesByCapability(uint8 capability) view returns (address[])",
   ]);
 
-  for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
-    try {
-      const data = rawInterface.encodeFunctionData(method, [1]);
-      const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
-      const [addresses] = coder.decode(["address[]"], result);
-      const executor = pickExecutor(addresses);
-      if (executor) return executor;
-    } catch {}
+  for (const capability of [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+    for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
+      try {
+        const data = rawInterface.encodeFunctionData(method, [capability]);
+        const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
+        const [addresses] = coder.decode(["address[]"], result);
+        const executor = pickExecutor(addresses);
+        if (executor) return executor;
+      } catch {}
+    }
   }
 
   throw new Error("No active Ritual LLM executor found.");
