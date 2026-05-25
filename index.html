@@ -2897,11 +2897,11 @@ async function depositRitualLlmFee() {
     const signer = await browserProvider.getSigner();
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, signer);
     const target = address;
-    const tx = await wallet.deposit(5000, { value: parseEther("0.02") });
+    const tx = await wallet.deposit(5000, { value: parseEther("0.1") });
     nodes.dailyQuestDepositButton.textContent = "Waiting deposit...";
     await tx.wait();
     nodes.accountStatus.textContent = "Ritual LLM fee deposited";
-    addLog(`Deposited 0.02 RITUAL to RitualWallet for ${shortenAddress(target)}.`);
+    addLog(`Deposited 0.1 RITUAL to RitualWallet for ${shortenAddress(target)}.`);
   } catch (error) {
     const message = getReadableError(error);
     nodes.accountStatus.textContent = `LLM deposit failed: ${message}`;
@@ -2937,6 +2937,7 @@ async function generateDailyQuestWithRitualLlm() {
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, browserProvider);
     const llmBalance = await wallet.balanceOf(ritualDailyQuestLlmContractAddress);
     const userBalance = await wallet.balanceOf(address);
+    nodes.accountStatus.textContent = `RitualWallet fee balance: ${formatRitualBalance(userBalance)}`;
     if (userBalance <= 0n) {
       throw new Error(`Wallet has no RitualWallet fee. Wallet ${formatRitualBalance(userBalance)}, contract ${formatRitualBalance(llmBalance)}. Tap Deposit LLM Fee first.`);
     }
