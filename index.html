@@ -53,8 +53,28 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
   gap: clamp(18px, 2vw, 28px);
-  align-items: stretch;
+  align-items: start;
   padding: clamp(10px, 2vh, 22px) 0;
+}
+
+.ritual-stage {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.shop-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.achievements {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.leaderboard {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .ritual-stage,
@@ -935,22 +955,6 @@ h2 {
   cursor: not-allowed;
 }
 
-.daily-quest-llm-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.daily-quest-llm-actions[hidden] {
-  display: none;
-}
-
-.daily-quest-llm-actions .login-button {
-  min-height: 38px;
-  padding: 8px;
-  font-size: 0.78rem;
-}
-
 .daily-claim-button {
   grid-column: 1 / -1;
   color: #02120b;
@@ -969,6 +973,20 @@ h2 {
 
 .mobile-nav {
   display: none;
+}
+
+@media (min-width: 821px) {
+  .sigil {
+    margin-top: clamp(18px, 3vh, 34px);
+  }
+
+  .ritual-meter {
+    margin-top: clamp(165px, 27vh, 340px);
+  }
+
+  .primary-action {
+    margin-top: 6px;
+  }
 }
 
 .level-guide {
@@ -1326,6 +1344,17 @@ h2 {
     padding: 10px 0;
   }
 
+  .ritual-stage,
+  .shop-panel,
+  .login-panel,
+  .daily-panel,
+  .mobile-tab-panel,
+  .achievements,
+  .leaderboard {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .shop-panel {
     display: contents;
   }
@@ -1443,6 +1472,7 @@ h2 {
   .sigil {
     width: min(82vw, 340px, 38vh);
   }
+
   .login-actions {
     grid-template-columns: auto 1fr;
   }
@@ -1572,14 +1602,6 @@ h2 {
             <button class="login-button daily-quest-button" id="dailyQuestClaimButton" type="button">
               Claim Quest Reward
             </button>
-            <div class="daily-quest-llm-actions" id="dailyQuestLlmActions" hidden>
-              <button class="login-button" id="dailyQuestDepositButton" type="button">
-                Deposit LLM Fee
-              </button>
-              <button class="login-button" id="dailyQuestGenerateButton" type="button">
-                Generate with Ritual LLM
-              </button>
-            </div>
           </div>
         </section>
 
@@ -1611,31 +1633,31 @@ h2 {
             </table>
           </section>
         </section>
-
-        <section class="achievements mobile-tab-panel" data-tab-panel="achievements" aria-label="Achievements">
-          <div class="section-heading">
-            <h2>Achievements</h2>
-            <span id="achievementCount">0/18</span>
-          </div>
-          <ol id="achievementsList"></ol>
-        </section>
-
-        <section class="leaderboard mobile-tab-panel" data-tab-panel="leaderboard" aria-label="Leaderboard">
-          <div class="leaderboard-heading">
-            <h2>Leaderboard</h2>
-            <span id="playerRank">Rank #1</span>
-          </div>
-          <button class="login-button share-button" id="shareButton" type="button">
-            Share Progress
-          </button>
-          <button class="login-button submit-score-button" id="submitScoreButton" type="button">
-            Submit Score Onchain
-          </button>
-          <p class="submit-score-status" id="submitScoreStatus">Best score is submitted from your connected wallet.</p>
-          <ol id="leaderboardList"></ol>
-          <p class="creator-credit">Made by X <a href="https://x.com/callmehannnnnnn" target="_blank" rel="noopener">@callmehannnnnnn</a></p>
-        </section>
       </aside>
+
+      <section class="achievements mobile-tab-panel" data-tab-panel="achievements" aria-label="Achievements">
+        <div class="section-heading">
+          <h2>Achievements</h2>
+          <span id="achievementCount">0/18</span>
+        </div>
+        <ol id="achievementsList"></ol>
+      </section>
+
+      <section class="leaderboard mobile-tab-panel" data-tab-panel="leaderboard" aria-label="Leaderboard">
+        <div class="leaderboard-heading">
+          <h2>Leaderboard</h2>
+          <span id="playerRank">Rank #1</span>
+        </div>
+        <button class="login-button share-button" id="shareButton" type="button">
+          Share Progress
+        </button>
+        <button class="login-button submit-score-button" id="submitScoreButton" type="button">
+          Submit Score Onchain
+        </button>
+        <p class="submit-score-status" id="submitScoreStatus">Best score is submitted from your connected wallet.</p>
+        <ol id="leaderboardList"></ol>
+        <p class="creator-credit">Made by X <a href="https://x.com/callmehannnnnnn" target="_blank" rel="noopener">@callmehannnnnnn</a></p>
+      </section>
       <nav class="mobile-nav" aria-label="Mobile sections">
         <button class="is-active" type="button" data-tab-target="daily">Daily</button>
         <button type="button" data-tab-target="upgrade">Upgrade</button>
@@ -1703,20 +1725,13 @@ h2 {
 const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
-const supabaseQuestTable = "ritual_daily_quests";
 const legacySaveKey = "ritual-clicker-state-v2";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
 const ritualAchievementsContractAddress = "0x989bb911bF43679037a277b403291612BA8eecAB";
 const ritualInvocationContractAddress = "0x841D0428871858a4065e73BB866301d1Dd559DCe";
-const ritualDailyQuestLlmContractAddress = new URLSearchParams(window.location.search).get("llm") || "0x1D41d5fB959ac88D8E0387477DCde5DBa03F151B";
-const ritualLlmPrecompileAddress = "0x0000000000000000000000000000000000000802";
-const ritualWalletAddress = "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948";
-const teeServiceRegistryAddress = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
-const ritualLlmExecutorOverride = new URLSearchParams(window.location.search).get("executor") || "";
-const ritualLlmModel = "zai-org/GLM-4.7-FP8";
-const ritualLlmConvoHistory = ["inline", "ritual-clicker-daily-quest", ""];
+const ritualDailyQuestContractAddress = "0xF6f3A1F41744E91b2eB0c1b37021E5D3D99Beab7";
 const dailyRitualAbi = [
   "function previewClaim(address player) view returns (bool canClaim, uint256 reward, uint256 nextStreak, uint256 today)",
   "function claimDaily() returns (uint256 reward, uint256 streak)",
@@ -1734,20 +1749,10 @@ const ritualInvocationAbi = [
   "function invokeRite(uint256 reward, uint256 totalClicks, uint256 totalEarned) returns (uint256 count)",
   "function getInvocation(address player) view returns (uint256 count, uint256 totalReward, uint256 lastReward, uint256 lastTotalClicks, uint256 lastTotalEarned, uint256 lastInvokedAt)",
 ];
-const ritualDailyQuestLlmAbi = [
-  "event DailyQuestGenerated(address indexed admin, string content)",
-  "event PrecompileDebug(address indexed admin, bool success, bytes rawOutput)",
-  "event DecodeDebug(address indexed admin, bool hasError, string errorMessage, bytes completionData)",
-  "function generate(bytes llmInput) returns (string content)",
-];
-const ritualWalletAbi = [
-  "function deposit(uint256 lockDuration) payable",
-  "function depositFor(address user, uint256 lockDuration) payable",
-  "function balanceOf(address account) view returns (uint256)",
-  "function lockUntil(address account) view returns (uint256)",
-];
-const teeServiceRegistryAbi = [
-  "function getServicesByCapability(uint8 capability, bool checkValidity) view returns (tuple(tuple(address paymentAddress, address teeAddress, uint8 teeType, bytes publicKey, string endpoint, bytes32 certPubKeyHash, uint8 capability) node, bool isValid, bytes32 workloadId)[])",
+const ritualDailyQuestAbi = [
+  "function claimQuest(uint256 day, string questType, uint256 reward) returns (bool claimedNow)",
+  "function hasClaimed(address player, uint256 day) view returns (bool)",
+  "function getClaim(address player) view returns (uint256 day, string questType, uint256 reward, uint256 totalReward, uint256 claimedAt)",
 ];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
@@ -1756,8 +1761,6 @@ let isLoadingCloudState = false;
 let walletConnectProvider = null;
 let cloudLeaderboard = [];
 let shareAvatarDataUrl = "";
-let globalDailyQuest = null;
-const isAdminMode = new URLSearchParams(window.location.search).get("admin") === "1";
 
 const ritualNetwork = {
   chainId: "0x7bb",
@@ -1912,9 +1915,6 @@ const nodes = {
   dailyQuestReward: document.querySelector("#dailyQuestReward"),
   dailyQuestFill: document.querySelector("#dailyQuestFill"),
   dailyQuestClaimButton: document.querySelector("#dailyQuestClaimButton"),
-  dailyQuestLlmActions: document.querySelector("#dailyQuestLlmActions"),
-  dailyQuestDepositButton: document.querySelector("#dailyQuestDepositButton"),
-  dailyQuestGenerateButton: document.querySelector("#dailyQuestGenerateButton"),
   shopList: document.querySelector("#shopList"),
   statusText: document.querySelector("#statusText"),
   achievementsList: document.querySelector("#achievementsList"),
@@ -1948,11 +1948,9 @@ renderShop();
 render();
 initializeCloudSession();
 loadCloudLeaderboard();
-loadGlobalDailyQuest();
 setInterval(tick, 1000);
 setInterval(saveState, 5000);
 setInterval(loadCloudLeaderboard, 30000);
-setInterval(loadGlobalDailyQuest, 300000);
 
 nodes.sigilButton.addEventListener("click", (event) => {
   const gain = Math.ceil(state.perClick * state.multiplier);
@@ -2112,11 +2110,6 @@ document.addEventListener("visibilitychange", () => {
 
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 nodes.dailyQuestClaimButton.addEventListener("click", claimDailyQuestReward);
-if (isAdminMode) {
-  nodes.dailyQuestLlmActions.hidden = false;
-  nodes.dailyQuestDepositButton.addEventListener("click", depositRitualLlmFee);
-  nodes.dailyQuestGenerateButton.addEventListener("click", generateDailyQuestWithRitualLlm);
-}
 
 nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 nodes.shareButton.addEventListener("click", openShareModal);
@@ -2598,73 +2591,6 @@ async function loadCloudLeaderboard() {
   }
 }
 
-async function loadGlobalDailyQuest() {
-  if (!supabaseClient) return;
-
-  try {
-    const today = getDateKey();
-    const { data, error } = await supabaseClient
-      .from(supabaseQuestTable)
-      .select("quest, tx_hash, generated_by, updated_at")
-      .eq("quest_date", today)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    const quest = normalizeDailyQuest(data?.quest);
-    if (!quest) return;
-
-    globalDailyQuest = quest;
-    applyDailyQuestDefinition(quest);
-    renderDailyQuest();
-  } catch (error) {
-    console.warn("Global daily quest load failed", error);
-  }
-}
-
-function applyDailyQuestDefinition(definition) {
-  const quest = normalizeDailyQuest(definition);
-  if (!quest) return;
-
-  quest.owner = "global";
-  quest.date = quest.date || getDateKey();
-  const current = normalizeDailyQuest(state.dailyQuest);
-  const sameQuest = current && current.date === quest.date && current.type === quest.type && current.target === quest.target;
-  state.dailyQuest = {
-    ...quest,
-    progress: sameQuest ? Math.min(quest.target, current.progress || 0) : 0,
-    claimed: sameQuest ? Boolean(current.claimed) : false,
-  };
-}
-
-async function saveGlobalDailyQuest(quest, txHash = "") {
-  if (!supabaseClient) throw new Error("Supabase is not configured.");
-  if (!cloudSession?.user?.id) throw new Error("Connect wallet first, then generate the global quest.");
-
-  const payload = {
-    ...normalizeDailyQuest(quest),
-    owner: "global",
-    progress: 0,
-    claimed: false,
-  };
-
-  const { error } = await supabaseClient.from(supabaseQuestTable).upsert(
-    {
-      quest_date: payload.date,
-      quest: payload,
-      generated_by: state.account?.address || "",
-      tx_hash: txHash,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "quest_date" },
-  );
-
-  if (error) throw error;
-
-  globalDailyQuest = payload;
-  applyDailyQuestDefinition(payload);
-}
-
 function getLocalLeaderboardFallback() {
   if (!state.account?.address || state.totalEarned <= 0) return [];
   return [
@@ -2742,9 +2668,7 @@ function getDailyReward(streak) {
 
 function ensureDailyQuest() {
   const today = getDateKey();
-  const definition = globalDailyQuest && globalDailyQuest.date === today
-    ? globalDailyQuest
-    : generateDailyQuest(today);
+  const definition = generateDailyQuest(today);
   const current = normalizeDailyQuest(state.dailyQuest);
   const sameQuest = current && current.date === definition.date && current.type === definition.type && current.target === definition.target;
 
@@ -2827,7 +2751,7 @@ function generateDailyQuest(dateKey) {
     title: titles[seed % titles.length],
     lore: lore[Math.floor(seed / 7) % lore.length],
     claimed: false,
-    source: "deterministic-llm-ready",
+    source: "daily-auto",
   };
 }
 
@@ -2837,19 +2761,14 @@ function renderDailyQuest() {
   const percent = Math.min(100, (progress / Math.max(1, quest.target)) * 100);
   const complete = progress >= quest.target;
 
-  nodes.dailyQuestStatus.textContent = quest.claimed ? "Claimed" : complete ? "Complete" : quest.source === "ritual-llm" ? "AI Live" : "Active";
+  nodes.dailyQuestStatus.textContent = quest.claimed ? "Claimed" : complete ? "Complete" : "Active";
   nodes.dailyQuestTitle.textContent = quest.title;
   nodes.dailyQuestLore.textContent = quest.lore;
   nodes.dailyQuestObjective.textContent = `${quest.objective}: ${format(progress)} / ${format(quest.target)}`;
   nodes.dailyQuestReward.textContent = `+${format(quest.reward)} essence`;
   nodes.dailyQuestFill.style.width = `${percent}%`;
   nodes.dailyQuestClaimButton.disabled = !complete || quest.claimed;
-  nodes.dailyQuestClaimButton.textContent = quest.claimed ? "Quest Claimed" : complete ? "Claim Quest Reward" : "Complete Quest First";
-  if (isAdminMode) {
-    nodes.dailyQuestGenerateButton.textContent = quest.source === "ritual-llm"
-      ? "Regenerate with Ritual LLM"
-      : "Generate with Ritual LLM";
-  }
+  nodes.dailyQuestClaimButton.textContent = quest.claimed ? "Quest Claimed" : complete ? "Claim Quest Onchain" : "Complete Quest First";
 }
 
 function updateDailyQuestProgress(type, { amount = 1 } = {}) {
@@ -2858,15 +2777,63 @@ function updateDailyQuestProgress(type, { amount = 1 } = {}) {
   quest.progress = Math.min(quest.target, (quest.progress || 0) + amount);
 }
 
-function claimDailyQuestReward() {
+async function claimDailyQuestReward() {
   const quest = ensureDailyQuest();
   if (quest.claimed || (quest.progress || 0) < quest.target) return;
-  quest.claimed = true;
-  state.essence += quest.reward;
-  state.totalEarned += quest.reward;
-  touchProgress();
-  addLog(`Daily AI Quest completed. Essence +${format(quest.reward)}.`);
-  render();
+  if (!ritualDailyQuestContractAddress) {
+    nodes.accountStatus.textContent = "Deploy RitualDailyQuest contract first";
+    addLog("Daily Quest claim needs RitualDailyQuest.sol contract address.");
+    return;
+  }
+
+  setWalletBusy(true, "Claiming quest onchain...");
+  nodes.dailyQuestClaimButton.disabled = true;
+  nodes.dailyQuestClaimButton.textContent = "Confirm in wallet...";
+
+  try {
+    const provider = await getWalletProvider();
+    const accounts = await getWalletAccounts(provider);
+    const address = accounts?.[0];
+    if (!address) throw new Error("No wallet address returned.");
+
+    await switchOrAddRitualTestnet(provider);
+    attachWalletAccount(address, "ritual");
+
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const contract = new Contract(ritualDailyQuestContractAddress, ritualDailyQuestAbi, signer);
+    const questDay = getQuestDayNumber(quest.date);
+    const alreadyClaimed = await contract.hasClaimed(address, questDay);
+    if (alreadyClaimed) {
+      quest.claimed = true;
+      nodes.accountStatus.textContent = "Daily Quest already claimed onchain";
+      render();
+      return;
+    }
+
+    const tx = await contract.claimQuest(questDay, quest.type, Math.floor(quest.reward));
+    nodes.dailyQuestClaimButton.textContent = "Waiting onchain...";
+    await tx.wait();
+
+    quest.claimed = true;
+    state.essence += quest.reward;
+    state.totalEarned += quest.reward;
+    touchProgress();
+    addLog(`Onchain Daily Quest claimed. Essence +${format(quest.reward)}.`);
+    render();
+  } catch (error) {
+    const message = getReadableError(error);
+    nodes.accountStatus.textContent = `Daily Quest claim failed: ${message}`;
+    addLog(`Daily Quest claim failed: ${message}`);
+    renderDailyQuest();
+  } finally {
+    setWalletBusy(false);
+  }
+}
+
+function getQuestDayNumber(dateKey) {
+  return Number(String(dateKey || getDateKey()).replaceAll("-", ""));
 }
 
 function hashString(text) {
@@ -2876,300 +2843,6 @@ function hashString(text) {
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
-}
-
-async function depositRitualLlmFee() {
-  setWalletBusy(true, "Depositing LLM fee...");
-  nodes.dailyQuestDepositButton.disabled = true;
-  nodes.dailyQuestDepositButton.textContent = "Confirm deposit...";
-
-  try {
-    const provider = await getWalletProvider();
-    const accounts = await getWalletAccounts(provider);
-    const address = accounts?.[0];
-    if (!address) throw new Error("No wallet address returned.");
-
-    await switchOrAddRitualTestnet(provider);
-    attachWalletAccount(address, "ritual");
-
-    const { BrowserProvider, Contract, parseEther } = await import("https://esm.sh/ethers@6.13.5");
-    const browserProvider = new BrowserProvider(provider);
-    const signer = await browserProvider.getSigner();
-    const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, signer);
-    const target = address;
-    const tx = await wallet.deposit(5000, { value: parseEther("0.1") });
-    nodes.dailyQuestDepositButton.textContent = "Waiting deposit...";
-    await tx.wait();
-    nodes.accountStatus.textContent = "Ritual LLM fee deposited";
-    addLog(`Deposited 0.1 RITUAL to RitualWallet for ${shortenAddress(target)}.`);
-  } catch (error) {
-    const message = getReadableError(error);
-    nodes.accountStatus.textContent = `LLM deposit failed: ${message}`;
-    addLog(`LLM deposit failed: ${message}`);
-  } finally {
-    nodes.dailyQuestDepositButton.disabled = false;
-    nodes.dailyQuestDepositButton.textContent = "Deposit LLM Fee";
-    setWalletBusy(false);
-  }
-}
-
-async function generateDailyQuestWithRitualLlm() {
-  setWalletBusy(true, "Calling Ritual LLM...");
-  nodes.dailyQuestGenerateButton.disabled = true;
-  nodes.dailyQuestGenerateButton.textContent = "Confirm LLM tx...";
-
-  try {
-    const provider = await getWalletProvider();
-    const accounts = await getWalletAccounts(provider);
-    const address = accounts?.[0];
-    if (!address) throw new Error("No wallet address returned.");
-
-    await switchOrAddRitualTestnet(provider);
-    attachWalletAccount(address, "ritual");
-
-    if (!ritualDailyQuestLlmContractAddress) {
-      throw new Error("Deploy RitualDailyQuestLLM.sol first, then open admin mode with ?admin=1&llm=CONTRACT_ADDRESS.");
-    }
-
-    const { AbiCoder, BrowserProvider, Contract, Interface, id } = await import("https://esm.sh/ethers@6.13.5");
-    const browserProvider = new BrowserProvider(provider);
-    const signer = await browserProvider.getSigner();
-    const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, browserProvider);
-    const llmBalance = await wallet.balanceOf(ritualDailyQuestLlmContractAddress);
-    const userBalance = await wallet.balanceOf(address);
-    nodes.accountStatus.textContent = `RitualWallet fee balance: ${formatRitualBalance(userBalance)}`;
-    if (userBalance <= 0n) {
-      throw new Error(`Wallet has no RitualWallet fee. Wallet ${formatRitualBalance(userBalance)}, contract ${formatRitualBalance(llmBalance)}. Tap Deposit LLM Fee first.`);
-    }
-    const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
-    const quest = ensureDailyQuest();
-    const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
-    const tx = await sendRitualAsyncTransaction(provider, browserProvider, address, encoded);
-
-    nodes.dailyQuestGenerateButton.textContent = "Waiting Ritual LLM...";
-    const receipt = await tx.wait();
-    let llmText;
-    try {
-      llmText = readRitualLlmGeneratedContent(receipt, new Interface(ritualDailyQuestLlmAbi));
-    } catch {
-      llmText = decodeRitualLlmReceipt(AbiCoder.defaultAbiCoder(), id, receipt);
-    }
-    const generated = parseRitualQuestJson(llmText);
-
-    quest.title = generated.title;
-    quest.lore = generated.lore;
-    quest.source = "ritual-llm";
-    quest.llmTxHash = receipt.hash;
-    await saveGlobalDailyQuest(quest, receipt.hash);
-    touchProgress();
-    nodes.accountStatus.textContent = "Global Daily AI Quest saved";
-    addLog("Global Daily AI Quest generated via Ritual LLM and saved for all players.");
-    render();
-  } catch (error) {
-    const message = getReadableError(error);
-    nodes.accountStatus.textContent = `Ritual LLM failed: ${message}`;
-    showRitualLlmDebug(message);
-    addLog(`Ritual LLM failed: ${message}`);
-    renderDailyQuest();
-  } finally {
-    nodes.dailyQuestGenerateButton.disabled = false;
-    setWalletBusy(false);
-  }
-}
-
-function showRitualLlmDebug(message) {
-  const text = `Ritual LLM failed: ${message}`;
-  try {
-    localStorage.setItem("ritual-clicker-last-llm-error", text);
-  } catch {}
-
-  if (nodes.dailyQuestStatus) nodes.dailyQuestStatus.textContent = "LLM Failed";
-  if (nodes.dailyQuestLore) nodes.dailyQuestLore.textContent = text;
-  if (isAdminMode) window.alert(text);
-}
-
-async function sendRitualAsyncTransaction(provider, browserProvider, from, llmInput) {
-  const txHash = await provider.request({
-    method: "eth_sendTransaction",
-    params: [{
-      from,
-      to: ritualLlmPrecompileAddress,
-      data: llmInput,
-      gas: "0x5B8D80",
-      asyncPayload: llmInput,
-    }],
-  });
-
-  return {
-    hash: txHash,
-    wait: () => browserProvider.waitForTransaction(txHash),
-  };
-}
-
-function readRitualLlmGeneratedContent(receipt, contractInterface) {
-  const debug = [];
-  for (const log of receipt.logs || []) {
-    try {
-      const parsed = contractInterface.parseLog(log);
-      if (parsed?.name === "DailyQuestGenerated") return parsed.args.content;
-      if (parsed?.name === "PrecompileDebug") {
-        debug.push(`precompile success=${parsed.args.success} raw=${String(parsed.args.rawOutput || "").slice(0, 42)}`);
-      }
-      if (parsed?.name === "DecodeDebug") {
-        debug.push(`decode hasError=${parsed.args.hasError} error=${parsed.args.errorMessage || "none"}`);
-      }
-    } catch {}
-  }
-
-  throw new Error(debug.length ? debug.join(" | ") : "Ritual LLM generated no event content.");
-}
-
-function formatRitualBalance(value) {
-  const whole = Number(value / 10000000000000000n) / 100;
-  return `${whole.toFixed(2)} RITUAL`;
-}
-
-async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
-  if (/^0x[0-9a-fA-F]{40}$/.test(ritualLlmExecutorOverride)) return ritualLlmExecutorOverride;
-
-  const registry = new ContractClass(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
-  const zeroAddress = "0x0000000000000000000000000000000000000000";
-  const isUsableAddress = (address) => {
-    if (!address) return false;
-    const normalized = String(address).toLowerCase();
-    if (normalized === zeroAddress) return false;
-    if (!/^0x[0-9a-f]{40}$/.test(normalized)) return false;
-    return BigInt(normalized) > 0xffffffffffffn;
-  };
-  const pickExecutor = (services) => {
-    const list = Array.isArray(services) ? services : [...services || []];
-    const active = list.find((service) => {
-      const address = typeof service === "string" ? service : service?.node?.teeAddress || service?.[0]?.[1] || service?.teeAddress || service?.[0];
-      const enabled = typeof service === "string" ? true : service?.isValid !== false && service?.[1] !== false && service?.active !== false;
-      return enabled && isUsableAddress(address);
-    });
-    return typeof active === "string" ? active : active?.node?.teeAddress || active?.[0]?.[1] || active?.teeAddress || active?.[0] || "";
-  };
-
-  try {
-    const services = await registry.getServicesByCapability(1, true);
-    const executor = pickExecutor(services);
-    if (executor) return executor;
-  } catch {}
-
-  try {
-    const services = await registry.getServicesByCapability(1, false);
-    const executor = pickExecutor(services);
-    if (executor) return executor;
-  } catch {}
-
-  const rawInterface = new InterfaceClass([
-    "function getServicesByCapability(uint8 capability, bool checkValidity) view returns (tuple(tuple(address paymentAddress,address teeAddress,uint8 teeType,bytes publicKey,string endpoint,bytes32 certPubKeyHash,uint8 capability) node,bool isValid,bytes32 workloadId)[])",
-  ]);
-
-  for (const checkValidity of [true, false]) {
-    try {
-      const data = rawInterface.encodeFunctionData("getServicesByCapability", [1, checkValidity]);
-      const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
-      const [services] = coder.decode(["tuple(tuple(address,address,uint8,bytes,string,bytes32,uint8),bool,bytes32)[]"], result);
-      const executor = pickExecutor(services);
-      if (executor) return executor;
-    } catch {}
-  }
-
-  throw new Error("No active Ritual LLM executor found.");
-}
-
-function encodeRitualLlmQuestRequest(coder, executor, quest) {
-  const messages = JSON.stringify([
-    {
-      role: "system",
-      content: "You write short, stylish Ritual Clicker daily quest copy. Return only JSON with title and lore. No markdown.",
-    },
-    {
-      role: "user",
-      content: `Player rank: ${getCurrentLevel().title}. Objective: ${quest.objective} ${format(quest.target)}. Reward: ${format(quest.reward)} essence. Create a dark ritual-themed title and one sentence lore.`,
-    },
-  ]);
-
-  return coder.encode(
-    [
-      "address", "bytes[]", "uint256", "bytes[]", "bytes",
-      "string", "string", "int256", "string", "bool", "int256", "string", "string",
-      "uint256", "bool", "int256", "string", "bytes", "int256", "string", "string", "bool",
-      "int256", "bytes", "bytes", "int256", "int256", "string", "bool",
-      "tuple(string,string,string)",
-    ],
-    [
-      executor,
-      [],
-      300,
-      [],
-      "0x",
-      messages,
-      ritualLlmModel,
-      0,
-      "",
-      false,
-      4096,
-      "",
-      "",
-      1,
-      true,
-      0,
-      "medium",
-      "0x",
-      -1,
-      "auto",
-      "",
-      false,
-      700,
-      "0x",
-      "0x",
-      -1,
-      1000,
-      "",
-      false,
-      ritualLlmConvoHistory,
-    ],
-  );
-}
-
-function decodeRitualLlmReceipt(coder, hashFn, receipt) {
-  const precompileTopic = hashFn("PrecompileCalled(address,bytes,bytes)");
-  const llmAddress = ritualLlmPrecompileAddress.toLowerCase();
-
-  for (const log of receipt.logs || []) {
-    if (log.topics?.[0] !== precompileTopic) continue;
-    const [addr, , output] = coder.decode(["address", "bytes", "bytes"], log.data);
-    if (String(addr).toLowerCase() !== llmAddress) continue;
-
-    let actualOutput = output;
-    try {
-      [, actualOutput] = coder.decode(["bytes", "bytes"], output);
-    } catch {}
-
-    const [hasError, completionData, , errorMessage] = coder.decode(["bool", "bytes", "bytes", "string", "tuple(string,string,string)"], actualOutput);
-    if (hasError) throw new Error(errorMessage || "Ritual LLM returned an error.");
-
-    const [, , , , , , choicesCount, choicesData] = coder.decode(["string", "string", "uint256", "string", "string", "string", "uint256", "bytes[]", "bytes"], completionData);
-    if (Number(choicesCount) < 1 || !choicesData.length) throw new Error("Ritual LLM returned no choices.");
-
-    const [, , messageData] = coder.decode(["uint256", "string", "bytes"], choicesData[0]);
-    const [, content] = coder.decode(["string", "string", "string", "uint256", "bytes[]"], messageData);
-    return content;
-  }
-
-  throw new Error("LLM result not found yet. Wait a few blocks and try again.");
-}
-
-function parseRitualQuestJson(text) {
-  const cleaned = String(text || "").trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
-  const parsed = JSON.parse(cleaned);
-  const title = String(parsed.title || "").trim().slice(0, 44);
-  const lore = String(parsed.lore || "").trim().slice(0, 140);
-  if (!title || !lore) throw new Error("Ritual LLM returned incomplete quest JSON.");
-  return { title, lore };
 }
 
 async function claimDailyReward() {
@@ -3876,7 +3549,7 @@ function normalizeDailyQuest(quest) {
     title: typeof quest.title === "string" ? quest.title : "Daily AI Quest",
     lore: typeof quest.lore === "string" ? quest.lore : "A new task waits inside the circle.",
     claimed: Boolean(quest.claimed),
-    source: typeof quest.source === "string" ? quest.source : "deterministic-llm-ready",
+    source: typeof quest.source === "string" ? quest.source : "daily-auto",
   };
 }
 
