@@ -1714,6 +1714,7 @@ const ritualDailyQuestLlmContractAddress = new URLSearchParams(window.location.s
 const ritualLlmPrecompileAddress = "0x0000000000000000000000000000000000000802";
 const ritualWalletAddress = "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948";
 const teeServiceRegistryAddress = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
+const ritualLlmExecutorOverride = new URLSearchParams(window.location.search).get("executor") || "";
 const ritualLlmModel = "zai-org/GLM-4.7-FP8";
 const ritualLlmConvoHistory = ["inline", "ritual-clicker-daily-quest", ""];
 const dailyRitualAbi = [
@@ -1746,8 +1747,7 @@ const ritualWalletAbi = [
   "function lockUntil(address account) view returns (uint256)",
 ];
 const teeServiceRegistryAbi = [
-  "function getServicesByCapability(uint8 capability) view returns (tuple(address teeAddress, bytes publicKey, string endpoint, uint8[] capabilities, bool active)[])",
-  "function getActiveServicesByCapability(uint8 capability) view returns (tuple(address teeAddress, bytes publicKey, string endpoint, uint8[] capabilities, bool active)[])",
+  "function getServicesByCapability(uint8 capability, bool checkValidity) view returns (tuple(tuple(address paymentAddress, address teeAddress, uint8 teeType, bytes publicKey, string endpoint, bytes32 certPubKeyHash, uint8 capability) node, bool isValid, bytes32 workloadId)[])",
 ];
 const supabaseClient = window.supabase?.createClient?.(supabaseUrl, supabaseAnonKey) || null;
 let cloudSession = null;
@@ -3045,6 +3045,8 @@ function formatRitualBalance(value) {
 }
 
 async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
+  if (/^0x[0-9a-fA-F]{40}$/.test(ritualLlmExecutorOverride)) return ritualLlmExecutorOverride;
+
   const registry = new ContractClass(teeServiceRegistryAddress, teeServiceRegistryAbi, browserProvider);
   const zeroAddress = "0x0000000000000000000000000000000000000000";
   const isUsableAddress = (address) => {
@@ -3057,38 +3059,37 @@ async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceCla
   const pickExecutor = (services) => {
     const list = Array.isArray(services) ? services : [...services || []];
     const active = list.find((service) => {
-      const address = typeof service === "string" ? service : service?.teeAddress || service?.[0];
-      const enabled = typeof service === "string" ? true : service?.active !== false && service?.[4] !== false;
+      const address = typeof service === "string" ? service : service?.node?.teeAddress || service?.[0]?.[1] || service?.teeAddress || service?.[0];
+      const enabled = typeof service === "string" ? true : service?.isValid !== false && service?.[1] !== false && service?.active !== false;
       return enabled && isUsableAddress(address);
     });
-    return typeof active === "string" ? active : active?.teeAddress || active?.[0] || "";
+    return typeof active === "string" ? active : active?.node?.teeAddress || active?.[0]?.[1] || active?.teeAddress || active?.[0] || "";
   };
 
-  for (const capability of [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
-    for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
-      try {
-        const services = await registry[method](capability);
-        const executor = pickExecutor(services);
-        if (executor) return executor;
-      } catch {}
-    }
-  }
+  try {
+    const services = await registry.getServicesByCapability(1, true);
+    const executor = pickExecutor(services);
+    if (executor) return executor;
+  } catch {}
+
+  try {
+    const services = await registry.getServicesByCapability(1, false);
+    const executor = pickExecutor(services);
+    if (executor) return executor;
+  } catch {}
 
   const rawInterface = new InterfaceClass([
-    "function getActiveServicesByCapability(uint8 capability) view returns (address[])",
-    "function getServicesByCapability(uint8 capability) view returns (address[])",
+    "function getServicesByCapability(uint8 capability, bool checkValidity) view returns (tuple(tuple(address paymentAddress,address teeAddress,uint8 teeType,bytes publicKey,string endpoint,bytes32 certPubKeyHash,uint8 capability) node,bool isValid,bytes32 workloadId)[])",
   ]);
 
-  for (const capability of [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
-    for (const method of ["getActiveServicesByCapability", "getServicesByCapability"]) {
-      try {
-        const data = rawInterface.encodeFunctionData(method, [capability]);
-        const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
-        const [addresses] = coder.decode(["address[]"], result);
-        const executor = pickExecutor(addresses);
-        if (executor) return executor;
-      } catch {}
-    }
+  for (const checkValidity of [true, false]) {
+    try {
+      const data = rawInterface.encodeFunctionData("getServicesByCapability", [1, checkValidity]);
+      const result = await browserProvider.call({ to: teeServiceRegistryAddress, data });
+      const [services] = coder.decode(["tuple(tuple(address,address,uint8,bytes,string,bytes32,uint8),bool,bytes32)[]"], result);
+      const executor = pickExecutor(services);
+      if (executor) return executor;
+    } catch {}
   }
 
   throw new Error("No active Ritual LLM executor found.");
