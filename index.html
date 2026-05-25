@@ -2896,10 +2896,8 @@ async function depositRitualLlmFee() {
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, signer);
-    const target = ritualDailyQuestLlmContractAddress || address;
-    const tx = ritualDailyQuestLlmContractAddress
-      ? await wallet.depositFor(target, 5000, { value: parseEther("0.02") })
-      : await wallet.deposit(5000, { value: parseEther("0.02") });
+    const target = address;
+    const tx = await wallet.deposit(5000, { value: parseEther("0.02") });
     nodes.dailyQuestDepositButton.textContent = "Waiting deposit...";
     await tx.wait();
     nodes.accountStatus.textContent = "Ritual LLM fee deposited";
@@ -2933,31 +2931,39 @@ async function generateDailyQuestWithRitualLlm() {
       throw new Error("Deploy RitualDailyQuestLLM.sol first, then open admin mode with ?admin=1&llm=CONTRACT_ADDRESS.");
     }
 
-    const { AbiCoder, BrowserProvider, Contract, Interface } = await import("https://esm.sh/ethers@6.13.5");
+    const { AbiCoder, BrowserProvider, Contract, Interface, id } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
     const signer = await browserProvider.getSigner();
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, browserProvider);
     const llmBalance = await wallet.balanceOf(ritualDailyQuestLlmContractAddress);
     const userBalance = await wallet.balanceOf(address);
-    if (llmBalance <= 0n) {
-      throw new Error(`LLM contract has no RitualWallet fee. Contract ${formatRitualBalance(llmBalance)}, wallet ${formatRitualBalance(userBalance)}. Tap Deposit LLM Fee first.`);
+    if (userBalance <= 0n) {
+      throw new Error(`Wallet has no RitualWallet fee. Wallet ${formatRitualBalance(userBalance)}, contract ${formatRitualBalance(llmBalance)}. Tap Deposit LLM Fee first.`);
     }
     const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
     const quest = ensureDailyQuest();
     const encoded = encodeRitualLlmQuestRequest(AbiCoder.defaultAbiCoder(), executor, quest);
-    const llmContract = new Contract(ritualDailyQuestLlmContractAddress, ritualDailyQuestLlmAbi, signer);
     let tx;
     try {
-      tx = await llmContract.generate(encoded, { gasLimit: 6000000 });
+      tx = await signer.sendTransaction({
+        to: ritualLlmPrecompileAddress,
+        data: encoded,
+        gasLimit: 6000000,
+      });
     } catch (error) {
       if (!isInvalidAsyncPayloadError(error)) throw error;
       nodes.dailyQuestGenerateButton.textContent = "Retrying async tx...";
-      tx = await sendRitualAsyncTransaction(provider, browserProvider, llmContract, address, encoded);
+      tx = await sendRitualAsyncTransaction(provider, browserProvider, address, encoded);
     }
 
     nodes.dailyQuestGenerateButton.textContent = "Waiting Ritual LLM...";
     const receipt = await tx.wait();
-    const llmText = readRitualLlmGeneratedContent(receipt, new Interface(ritualDailyQuestLlmAbi));
+    let llmText;
+    try {
+      llmText = readRitualLlmGeneratedContent(receipt, new Interface(ritualDailyQuestLlmAbi));
+    } catch {
+      llmText = decodeRitualLlmReceipt(AbiCoder.defaultAbiCoder(), id, receipt);
+    }
     const generated = parseRitualQuestJson(llmText);
 
     quest.title = generated.title;
@@ -2997,14 +3003,13 @@ function isInvalidAsyncPayloadError(error) {
   return message.includes("invalid async payload");
 }
 
-async function sendRitualAsyncTransaction(provider, browserProvider, contract, from, llmInput) {
-  const txData = contract.interface.encodeFunctionData("generate", [llmInput]);
+async function sendRitualAsyncTransaction(provider, browserProvider, from, llmInput) {
   const txHash = await provider.request({
     method: "eth_sendTransaction",
     params: [{
       from,
-      to: ritualDailyQuestLlmContractAddress,
-      data: txData,
+      to: ritualLlmPrecompileAddress,
+      data: llmInput,
       gas: "0x5B8D80",
       asyncPayload: llmInput,
     }],
