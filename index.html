@@ -1735,6 +1735,8 @@ const ritualInvocationAbi = [
 ];
 const ritualDailyQuestLlmAbi = [
   "event DailyQuestGenerated(address indexed admin, string content)",
+  "event PrecompileDebug(address indexed admin, bool success, bytes rawOutput)",
+  "event DecodeDebug(address indexed admin, bool hasError, string errorMessage, bytes completionData)",
   "function generate(bytes llmInput) returns (string content)",
 ];
 const ritualWalletAbi = [
@@ -2936,8 +2938,9 @@ async function generateDailyQuestWithRitualLlm() {
     const signer = await browserProvider.getSigner();
     const wallet = new Contract(ritualWalletAddress, ritualWalletAbi, browserProvider);
     const llmBalance = await wallet.balanceOf(ritualDailyQuestLlmContractAddress);
+    const userBalance = await wallet.balanceOf(address);
     if (llmBalance <= 0n) {
-      throw new Error("LLM contract has no RitualWallet fee. Tap Deposit LLM Fee first.");
+      throw new Error(`LLM contract has no RitualWallet fee. Contract ${formatRitualBalance(llmBalance)}, wallet ${formatRitualBalance(userBalance)}. Tap Deposit LLM Fee first.`);
     }
     const executor = await getRitualLlmExecutor(browserProvider, Contract, Interface, AbiCoder.defaultAbiCoder());
     const quest = ensureDailyQuest();
@@ -2971,14 +2974,26 @@ async function generateDailyQuestWithRitualLlm() {
 }
 
 function readRitualLlmGeneratedContent(receipt, contractInterface) {
+  const debug = [];
   for (const log of receipt.logs || []) {
     try {
       const parsed = contractInterface.parseLog(log);
       if (parsed?.name === "DailyQuestGenerated") return parsed.args.content;
+      if (parsed?.name === "PrecompileDebug") {
+        debug.push(`precompile success=${parsed.args.success} raw=${String(parsed.args.rawOutput || "").slice(0, 42)}`);
+      }
+      if (parsed?.name === "DecodeDebug") {
+        debug.push(`decode hasError=${parsed.args.hasError} error=${parsed.args.errorMessage || "none"}`);
+      }
     } catch {}
   }
 
-  throw new Error("Ritual LLM generated no event content.");
+  throw new Error(debug.length ? debug.join(" | ") : "Ritual LLM generated no event content.");
+}
+
+function formatRitualBalance(value) {
+  const whole = Number(value / 10000000000000000n) / 100;
+  return `${whole.toFixed(2)} RITUAL`;
 }
 
 async function getRitualLlmExecutor(browserProvider, ContractClass, InterfaceClass, coder) {
