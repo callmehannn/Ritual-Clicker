@@ -1,8 +1,7 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+  "functions": {
+    "api/x-profile.js": {
+      "runtime": "nodejs20.x"
     }
-  ]
+  }
 }
