@@ -723,15 +723,15 @@ h2 {
 }
 
 .achievements li.is-onchain {
-  border-color: rgba(255, 215, 106, 0.52);
+  border-color: rgba(64, 255, 175, 0.62);
   box-shadow:
-    inset 0 0 18px rgba(255, 215, 106, 0.1),
-    0 0 18px rgba(255, 215, 106, 0.12);
+    inset 0 0 18px rgba(64, 255, 175, 0.12),
+    0 0 18px rgba(64, 255, 175, 0.16);
 }
 
 .achievements li.is-onchain .achievement-badge,
 .achievements li.is-onchain .achievement-claim {
-  background: #ffd76a;
+  background: var(--bright);
   color: #02120b;
 }
 
@@ -1177,6 +1177,13 @@ h2 {
   font: inherit;
 }
 
+.share-profile-status {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
 .share-card {
   position: relative;
   display: grid;
@@ -1566,7 +1573,7 @@ h2 {
         <section class="daily-panel mobile-tab-panel is-active" data-tab-panel="daily" aria-label="Daily login">
           <div class="section-heading">
             <h2>Daily Login</h2>
-            <span id="dailyStatus">Ready</span>
+            <span id="dailyStatus" hidden></span>
           </div>
           <div class="daily-calendar-card">
             <div class="daily-calendar-face">
@@ -1589,10 +1596,10 @@ h2 {
               </button>
             </div>
           </div>
-          <div class="daily-quest-card" aria-label="Daily AI quest">
+          <div class="daily-quest-card" aria-label="Daily quest">
             <div class="daily-quest-head">
-              <span class="daily-quest-kicker">Daily AI Quest</span>
-              <span id="dailyQuestStatus">Ready</span>
+              <span class="daily-quest-kicker">Daily Quest</span>
+              <span id="dailyQuestStatus" hidden></span>
             </div>
             <h3 id="dailyQuestTitle">Whispers of the Circle</h3>
             <p id="dailyQuestLore">The circle is preparing a task for today.</p>
@@ -1681,10 +1688,7 @@ h2 {
             X username
             <input id="shareUsername" type="text" placeholder="@username" autocomplete="off">
           </label>
-          <label>
-            Profile picture
-            <input id="shareAvatarInput" type="file" accept="image/*">
-          </label>
+          <p class="share-profile-status" id="shareProfileStatus">Type an X username to auto-load the profile picture after deploy.</p>
         </div>
         <section class="share-card" id="shareCard" aria-label="Share card preview">
           <div class="share-card-main">
@@ -1764,7 +1768,10 @@ let cloudSaveTimer = null;
 let isLoadingCloudState = false;
 let walletConnectProvider = null;
 let cloudLeaderboard = [];
-let shareAvatarDataUrl = "";
+let shareXAvatarDataUrl = "";
+let shareXProfileHandle = "";
+let shareXProfileName = "";
+let shareProfileLookupTimer = 0;
 
 const ritualNetwork = {
   chainId: "0x7bb",
@@ -1931,7 +1938,7 @@ const nodes = {
   shareModal: document.querySelector("#shareModal"),
   closeShareButton: document.querySelector("#closeShareButton"),
   shareUsername: document.querySelector("#shareUsername"),
-  shareAvatarInput: document.querySelector("#shareAvatarInput"),
+  shareProfileStatus: document.querySelector("#shareProfileStatus"),
   shareAvatar: document.querySelector("#shareAvatar"),
   shareRank: document.querySelector("#shareRank"),
   shareName: document.querySelector("#shareName"),
@@ -2118,8 +2125,7 @@ nodes.dailyQuestClaimButton.addEventListener("click", claimDailyQuestReward);
 nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 nodes.shareButton.addEventListener("click", openShareModal);
 nodes.closeShareButton.addEventListener("click", closeShareModal);
-nodes.shareUsername.addEventListener("input", updateShareCard);
-nodes.shareAvatarInput.addEventListener("change", handleShareAvatar);
+nodes.shareUsername.addEventListener("input", handleShareUsernameInput);
 nodes.downloadShareButton.addEventListener("click", downloadShareCard);
 nodes.postShareButton.addEventListener("click", postShareToX);
 nodes.shareModal.addEventListener("click", (event) => {
@@ -2973,21 +2979,13 @@ function closeShareModal() {
   nodes.shareModal.hidden = true;
 }
 
-function handleShareAvatar(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-    nodes.submitScoreStatus.textContent = "Upload an image file for the card.";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    shareAvatarDataUrl = String(reader.result || "");
-    updateShareCard();
-  });
-  reader.readAsDataURL(file);
+function handleShareUsernameInput() {
+  shareXAvatarDataUrl = "";
+  shareXProfileHandle = "";
+  shareXProfileName = "";
+  updateShareCard();
+  window.clearTimeout(shareProfileLookupTimer);
+  shareProfileLookupTimer = window.setTimeout(loadShareXProfile, 500);
 }
 
 function getShareHandle() {
@@ -2998,7 +2996,7 @@ function getShareHandle() {
 }
 
 function getShareAvatarSource(handle) {
-  if (shareAvatarDataUrl) return shareAvatarDataUrl;
+  if (shareXAvatarDataUrl) return shareXAvatarDataUrl;
   const initial = (handle[0] || "R").toUpperCase();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -3008,6 +3006,37 @@ function getShareAvatarSource(handle) {
     </svg>
   `;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+async function loadShareXProfile() {
+  const typed = nodes.shareUsername.value.trim().replace(/^@/, "");
+  const username = typed.replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
+  if (!username) {
+    nodes.shareProfileStatus.textContent = "Type an X username to auto-load the profile picture after deploy.";
+    return;
+  }
+
+  if (window.location.protocol === "file:") {
+    nodes.shareProfileStatus.textContent = "Auto X profile works after deploy on Vercel. Manual upload still works here.";
+    return;
+  }
+
+  nodes.shareProfileStatus.textContent = "Loading X profile...";
+  try {
+    const result = await fetch(`/api/x-profile?username=${encodeURIComponent(username)}`);
+    const profile = await result.json();
+    if (!result.ok) throw new Error(profile.error || "Could not load X profile");
+
+    shareXProfileHandle = profile.username || username;
+    shareXProfileName = profile.name || "";
+    shareXAvatarDataUrl = profile.profile_image_data_url || profile.profile_image_url || "";
+    nodes.shareProfileStatus.textContent = shareXAvatarDataUrl
+      ? `Loaded @${shareXProfileHandle} from X.`
+      : `Loaded @${shareXProfileHandle}, but no profile picture was returned.`;
+    updateShareCard();
+  } catch (error) {
+    nodes.shareProfileStatus.textContent = error.message || "Could not load X profile.";
+  }
 }
 
 function updateShareCard() {
@@ -3020,7 +3049,9 @@ function updateShareCard() {
   nodes.shareCard.style.setProperty("--aura-soft", aura.soft);
   nodes.shareAvatar.src = getShareAvatarSource(handle);
   nodes.shareRank.textContent = level.title;
-  nodes.shareName.textContent = `@${handle}`;
+  nodes.shareName.textContent = shareXProfileName && shareXProfileHandle
+    ? `${shareXProfileName} · @${shareXProfileHandle}`
+    : `@${handle}`;
   nodes.shareEssence.textContent = format(state.essence);
   nodes.shareEarned.textContent = format(state.totalEarned);
   nodes.shareClicks.textContent = format(state.totalClicks);
@@ -3550,7 +3581,7 @@ function normalizeDailyQuest(quest) {
     progress: Number.isFinite(quest.progress) ? quest.progress : 0,
     reward: Number.isFinite(quest.reward) ? quest.reward : 0,
     objective: typeof quest.objective === "string" ? quest.objective : "Complete quest",
-    title: typeof quest.title === "string" ? quest.title : "Daily AI Quest",
+    title: typeof quest.title === "string" ? quest.title : "Daily Quest",
     lore: typeof quest.lore === "string" ? quest.lore : "A new task waits inside the circle.",
     claimed: Boolean(quest.claimed),
     source: typeof quest.source === "string" ? quest.source : "daily-auto",
