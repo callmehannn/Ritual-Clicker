@@ -1022,7 +1022,7 @@ function renderDailyLogin() {
   const needsCheck = dailyRitualContractAddress && hasWallet && !statusFresh && !checkFailed;
   const claimed = hasClaimedDailyToday() || chainClaimed;
   const nextStreak = claimed ? state.dailyStreak : state.dailyLastClaimDate === getDateKey(-1) ? state.dailyStreak + 1 : 1;
-  const reward = statusFresh && dailyChainStatus.reward > 0 ? dailyChainStatus.reward : getDailyReward(nextStreak);
+  const reward = statusFresh && dailyChainStatus.reward > 0 ? dailyChainStatus.reward : getDailyReward(nextStreak, today);
   const todayDate = new Date();
 
   nodes.dailyStatus.textContent = checking || needsCheck ? "Checking" : claimed ? "Claimed" : "Ready";
@@ -1083,9 +1083,10 @@ async function refreshDailyChainStatus(address, provider = window.ethereum) {
     const browserProvider = new BrowserProvider(provider);
     const contract = new Contract(dailyRitualContractAddress, dailyRitualAbi, browserProvider);
     const [canClaim, reward, nextStreak] = await contract.previewClaim(address);
+    const dynamicReward = getDailyReward(Number(nextStreak) || 1, today);
     dailyChainStatus.status = "checked";
     dailyChainStatus.canClaim = Boolean(canClaim);
-    dailyChainStatus.reward = Number(reward) || 0;
+    dailyChainStatus.reward = dynamicReward || Number(reward) || 0;
     dailyChainStatus.nextStreak = Number(nextStreak) || 1;
 
     if (!canClaim) {
@@ -1107,8 +1108,13 @@ async function refreshDailyChainStatus(address, provider = window.ethereum) {
   }
 }
 
-function getDailyReward(streak) {
-  return Math.min(500, 250 + Math.max(0, streak - 1) * 50);
+function getDailyReward(streak, dateKey = getDateKey()) {
+  const seed = hashString(`${dateKey}:daily-login-reward`);
+  const streakBonus = Math.min(900, Math.max(0, streak - 1) * 75);
+  const dailyBonus = [0, 75, 125, 180, 240, 320, 420][seed % 7];
+  const weekendBonus = isWeekendDate(dateKey) ? 250 : 0;
+  const milestoneBonus = streak > 0 && streak % 7 === 0 ? 700 : 0;
+  return roundReward((350 + streakBonus + dailyBonus + weekendBonus + milestoneBonus) * getRankRewardMultiplier());
 }
 
 function ensureDailyQuest() {
@@ -1142,30 +1148,32 @@ function generateDailyQuest(dateKey) {
   const questTypes = ["click", "earn", "upgrade", "boost", "daily"];
   const type = questTypes[seed % questTypes.length];
   const difficulty = 1 + (seed % 4);
+  const rewardVariance = 1 + ((seed >>> 5) % 7) * 0.08;
+  const dailyQuestReward = (base) => roundReward((base * rewardVariance + ((seed >>> 11) % 5) * 125) * getRankRewardMultiplier());
   const configs = {
     click: {
       target: [150, 300, 600, 1000][difficulty - 1],
-      reward: [700, 1200, 2200, 3600][difficulty - 1],
+      reward: dailyQuestReward([700, 1200, 2200, 3600][difficulty - 1]),
       objective: "Click the sigil",
     },
     earn: {
       target: [5000, 15000, 35000, 75000][difficulty - 1],
-      reward: [900, 1800, 3200, 5200][difficulty - 1],
+      reward: dailyQuestReward([900, 1800, 3200, 5200][difficulty - 1]),
       objective: "Earn essence",
     },
     upgrade: {
       target: [1, 2, 3, 4][difficulty - 1],
-      reward: [800, 1700, 3000, 4800][difficulty - 1],
+      reward: dailyQuestReward([800, 1700, 3000, 4800][difficulty - 1]),
       objective: "Buy upgrades",
     },
     boost: {
       target: 1,
-      reward: 1600 + difficulty * 350,
+      reward: dailyQuestReward(1600 + difficulty * 350),
       objective: "Activate 2x Boost",
     },
     daily: {
       target: 1,
-      reward: 1250 + difficulty * 300,
+      reward: dailyQuestReward(1250 + difficulty * 300),
       objective: "Claim daily login",
     },
   };
@@ -1289,6 +1297,29 @@ function hashString(text) {
   return hash >>> 0;
 }
 
+function roundReward(value) {
+  return Math.max(50, Math.round(value / 50) * 50);
+}
+
+function getRankRewardMultiplier() {
+  const rank = getCurrentLevel();
+  const multipliers = {
+    Bitty: 1,
+    Ritty: 1.25,
+    Ritualist: 1.65,
+    "Radiant Ritualist": 2.2,
+    Zealot: 3,
+  };
+  return multipliers[rank.title] || 1;
+}
+
+function isWeekendDate(dateKey) {
+  const [year, month, day] = String(dateKey).split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  const weekday = date.getDay();
+  return weekday === 0 || weekday === 6;
+}
+
 async function claimDailyReward() {
   if (dailyRitualContractAddress && !state.account?.address) {
     nodes.accountStatus.textContent = "Connect wallet before claiming daily.";
@@ -1327,6 +1358,7 @@ async function claimOnchainDailyReward() {
     const signer = await browserProvider.getSigner();
     const contract = new Contract(dailyRitualContractAddress, dailyRitualAbi, signer);
     const [canClaim, reward, nextStreak] = await contract.previewClaim(address);
+    const dynamicReward = getDailyReward(Number(nextStreak) || 1, getDateKey());
 
     if (!canClaim) {
       nodes.accountStatus.textContent = "Daily already claimed onchain";
@@ -1335,7 +1367,7 @@ async function claimOnchainDailyReward() {
       dailyChainStatus.date = getDateKey();
       dailyChainStatus.status = "checked";
       dailyChainStatus.canClaim = false;
-      dailyChainStatus.reward = Number(reward) || 0;
+      dailyChainStatus.reward = dynamicReward || Number(reward) || 0;
       dailyChainStatus.nextStreak = Number(nextStreak) || state.dailyStreak || 1;
       state.dailyLastClaimDate = getDateKey();
       state.dailyStreak = Math.max(state.dailyStreak || 0, Number(nextStreak) || 0);
@@ -1349,7 +1381,7 @@ async function claimOnchainDailyReward() {
     nodes.dailyClaimButton.textContent = "Waiting onchain...";
     await tx.wait();
 
-    const rewardNumber = Number(reward);
+    const rewardNumber = dynamicReward || Number(reward);
     state.dailyLastClaimDate = getDateKey();
     state.dailyStreak = Number(nextStreak);
     state.essence += rewardNumber;
