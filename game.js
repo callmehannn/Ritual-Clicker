@@ -186,10 +186,8 @@ const nodes = {
   perClick: document.querySelector("#perClick"),
   perSecond: document.querySelector("#perSecond"),
   currentLevelTitle: document.querySelector("#currentLevelTitle"),
-  totalClicks: document.querySelector("#totalClicks"),
+  levelTotalClicks: document.querySelector("#levelTotalClicks"),
   levelProgressFill: document.querySelector("#levelProgressFill"),
-  levelProgressStart: document.querySelector("#levelProgressStart"),
-  levelProgressEnd: document.querySelector("#levelProgressEnd"),
   focusText: document.querySelector("#focusText"),
   focusFill: document.querySelector("#focusFill"),
   sigilButton: document.querySelector("#sigilButton"),
@@ -267,7 +265,7 @@ nodes.sigilButton.addEventListener("click", (event) => {
   updateDailyQuestProgress("click", { amount: 1 });
   updateDailyQuestProgress("earn", { amount: gain });
   touchProgress();
-  popText(event.clientX, event.clientY, `${isCrit ? "CRIT " : ""}+${format(gain)}`, isCrit ? "crit" : "");
+  popText(event.clientX, event.clientY, `${isCrit ? "CRIT " : ""}+${formatEssence(gain)}`, isCrit ? "crit" : "");
   burstParticles(event.clientX, event.clientY, isCrit);
   renderComboHud(combo, isCrit);
   nodes.sigilButton.classList.add("clicked");
@@ -290,7 +288,7 @@ async function invokeRite() {
   nodes.accountStatus.textContent = "Deploy RitualInvocation contract first";
   addLog("Activate 2x Boost needs RitualInvocation.sol deployed before it can be onchain.");
   completeInvokeReward(reward);
-  addLog(`2x Boost activated locally. Essence surges +${format(reward)}.`);
+  addLog(`2x Boost activated locally. Essence surges +${formatEssence(reward)}.`);
   render();
 }
 
@@ -318,7 +316,7 @@ async function invokeRiteOnchain(reward) {
 
     completeInvokeReward(reward);
     nodes.accountStatus.textContent = "2x Boost activated onchain";
-    addLog(`Onchain 2x Boost activated. Essence surges +${format(reward)}.`);
+    addLog(`Onchain 2x Boost activated. Essence surges +${formatEssence(reward)}.`);
     render();
   } catch (error) {
     const message = getReadableError(error);
@@ -480,7 +478,7 @@ function renderShop() {
 }
 
 function render() {
-  nodes.essence.textContent = format(state.essence);
+  nodes.essence.textContent = formatEssence(state.essence);
   nodes.perClick.textContent = format(Math.ceil(state.perClick * state.multiplier));
   nodes.perSecond.textContent = format(Math.ceil(state.perSecond * state.multiplier));
   renderLevelProgress();
@@ -505,7 +503,7 @@ function render() {
     const cost = getCost(upgrade);
     card.disabled = state.essence < cost;
     card.querySelector(".upgrade-meta").textContent = `Owned ${owned}`;
-    card.querySelector(".upgrade-cost").textContent = `Cost ${format(cost)}`;
+    card.querySelector(".upgrade-cost").textContent = `Cost ${formatEssence(cost)}`;
   });
 
   saveState();
@@ -1029,7 +1027,7 @@ function renderDailyLogin() {
   nodes.dailyDay.textContent = String(todayDate.getDate());
   nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
-  nodes.dailyReward.textContent = `${format(reward)} essence`;
+  nodes.dailyReward.textContent = formatEssence(reward);
   if (!dailyRitualContractAddress) {
     nodes.dailyClaimButton.disabled = true;
     nodes.dailyClaimButton.textContent = "Deploy Daily Contract First";
@@ -1213,7 +1211,7 @@ function renderDailyQuest() {
   nodes.dailyQuestStatus.textContent = quest.claimed ? "Claimed" : complete ? "Complete" : "Active";
   nodes.dailyQuestTitle.textContent = quest.title;
   nodes.dailyQuestObjective.textContent = `${quest.objective}: ${format(progress)} / ${format(quest.target)}`;
-  nodes.dailyQuestReward.textContent = `+${format(quest.reward)} essence`;
+  nodes.dailyQuestReward.textContent = `+${formatEssence(quest.reward)}`;
   nodes.dailyQuestFill.style.width = `${percent}%`;
   nodes.dailyQuestClaimButton.disabled = !complete || quest.claimed;
   nodes.dailyQuestClaimButton.textContent = quest.claimed ? "Quest Claimed" : complete ? "Claim Quest Onchain" : "Complete Quest First";
@@ -1443,14 +1441,14 @@ function renderLeaderboard() {
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
           <span class="leader-name">${entry.name}</span>
-          <strong>${format(entry.score)}</strong>
+          <strong>${formatEssence(entry.score)}</strong>
         </li>
       `,
     )
     .join("");
   nodes.leaderboardPlayerRank.hidden = !showPlayerRank;
   nodes.leaderboardPlayerRank.innerHTML = showPlayerRank
-    ? `<span>Your rank #${playerIndex + 1}</span><strong>${format(playerEntry.score)}</strong>`
+    ? `<span>Your rank #${playerIndex + 1}</span><strong>${formatEssence(playerEntry.score)}</strong>`
     : "";
   nodes.submitScoreButton.disabled = state.totalEarned <= 0;
   nodes.submitScoreButton.textContent = ritualScoreContractAddress ? "Submit Score Onchain" : "Deploy Score Contract First";
@@ -1459,7 +1457,7 @@ function renderLeaderboard() {
   } else if (!state.account?.address) {
     nodes.submitScoreStatus.textContent = "Connect wallet to submit your best score onchain.";
   } else {
-    nodes.submitScoreStatus.textContent = `Ready to submit ${format(state.totalEarned)} total essence.`;
+    nodes.submitScoreStatus.textContent = `Ready to submit ${formatEssence(state.totalEarned)} total essence.`;
   }
 }
 
@@ -1535,8 +1533,8 @@ function updateShareCard() {
   nodes.shareName.textContent = shareXProfileName && shareXProfileHandle
     ? `${shareXProfileName} · @${shareXProfileHandle}`
     : `@${handle}`;
-  nodes.shareEssence.textContent = format(state.essence);
-  nodes.shareEarned.textContent = format(state.totalEarned);
+  nodes.shareEssence.textContent = formatEssence(state.essence);
+  nodes.shareEarned.textContent = formatEssence(state.totalEarned);
   nodes.shareClicks.textContent = format(state.totalClicks);
   nodes.shareIncome.textContent = `${format(state.perSecond)}/s`;
   nodes.shareAchievements.textContent = `${unlocked}/${achievements.length} achievements`;
@@ -1569,8 +1567,8 @@ function postShareToX() {
   const level = getCurrentLevel();
   const text = [
     `I reached ${level.title} in Ritual Clicker.`,
-    `Essence: ${format(state.essence)}`,
-    `Total earned: ${format(state.totalEarned)}`,
+    `Essence: ${formatEssence(state.essence)}`,
+    `Total earned: ${formatEssence(state.totalEarned)}`,
     `Clicks: ${format(state.totalClicks)}`,
   ].join("\n");
   const url = new URL("https://twitter.com/intent/tweet");
@@ -1621,8 +1619,8 @@ async function renderShareCardCanvas() {
   context.fillText(`@${handle}`, 292, 198);
 
   const stats = [
-    { label: "Total Earned", value: format(state.totalEarned), x: 78, width: 310, featured: true },
-    { label: "Essence", value: format(state.essence), x: 410, width: 220 },
+    { label: "Total Earned", value: formatEssence(state.totalEarned), x: 78, width: 310, featured: true },
+    { label: "Essence", value: formatEssence(state.essence), x: 410, width: 220 },
     { label: "Total Clicks", value: format(state.totalClicks), x: 652, width: 220 },
     { label: "Income", value: `${format(state.perSecond)}/s`, x: 894, width: 220 },
   ];
@@ -1888,16 +1886,14 @@ function renderLevelProgress() {
   const end = nextLevel ? nextLevel.clicks : currentLevel.clicks;
   const range = Math.max(1, end - start);
   const progress = nextLevel ? Math.min(100, ((state.totalClicks - start) / range) * 100) : 100;
-  const labelProgress = Math.min(96, Math.max(4, progress));
 
   nodes.currentLevelTitle.textContent = currentLevel.title;
   nodes.sigilButton.style.setProperty("--aura", aura.aura);
   nodes.sigilButton.style.setProperty("--aura-soft", aura.soft);
   nodes.levelProgressFill.style.width = `${progress}%`;
-  nodes.totalClicks.parentElement.style.setProperty("--level-progress", `${labelProgress}%`);
-  nodes.levelProgressStart.textContent = format(start);
-  nodes.levelProgressEnd.textContent = nextLevel ? format(end) : "Max";
-  nodes.totalClicks.textContent = format(state.totalClicks);
+  nodes.levelTotalClicks.textContent = nextLevel
+    ? `${format(state.totalClicks)} / ${format(end)} total clicks · next ${nextLevel.title}`
+    : `${format(state.totalClicks)} total clicks · max rank`;
 }
 
 function getCurrentLevel() {
@@ -2022,6 +2018,10 @@ function format(value) {
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(1)}M`;
   if (number >= 1_000) return `${(number / 1_000).toFixed(1)}K`;
   return String(number);
+}
+
+function formatEssence(value) {
+  return `❖ ${format(value)}`;
 }
 
 function shortenAddress(address) {

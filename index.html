@@ -152,7 +152,9 @@ h1 {
 }
 
 h2 {
-  font-size: 1rem;
+  font-size: clamp(1.08rem, 2.2vw, 1.28rem);
+  line-height: 1.05;
+  font-weight: 900;
 }
 
 .icon-button {
@@ -185,7 +187,15 @@ h2 {
 }
 
 .resource-panel > .level-progress-card {
-  border: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.1), rgba(7, 115, 69, 0.18)),
+    rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 22px rgba(64, 255, 175, 0.06);
 }
 
 .level-title-row,
@@ -197,21 +207,21 @@ h2 {
 }
 
 .level-title-row {
-  padding: 12px 14px;
-  border: 1px solid rgba(64, 255, 175, 0.42);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(64, 255, 175, 0.13), rgba(7, 115, 69, 0.25)),
-    rgba(0, 0, 0, 0.52);
-  box-shadow: inset 0 0 22px rgba(64, 255, 175, 0.07);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .level-title-row strong {
   overflow-wrap: anywhere;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.65rem, 5.4vw, 3.4rem);
+  font-family: inherit;
+  font-size: clamp(1.3rem, 4vw, 2.25rem);
   line-height: 1;
+  font-weight: 900;
+  text-transform: uppercase;
   text-shadow:
     0 0 14px color-mix(in srgb, var(--aura) 60%, transparent),
     0 0 34px color-mix(in srgb, var(--aura) 30%, transparent);
@@ -220,7 +230,7 @@ h2 {
 .level-title-row .label {
   margin-bottom: 0;
   color: var(--bright);
-  font-size: clamp(1rem, 2.4vw, 1.4rem);
+  font-size: clamp(0.88rem, 2vw, 1.12rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.04em;
@@ -228,42 +238,34 @@ h2 {
   text-shadow: 0 0 14px rgba(64, 255, 175, 0.32);
 }
 
+.level-click-summary {
+  display: inline-grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-size: clamp(0.38rem, 0.72vw, 0.48rem);
+  font-weight: 500;
+  opacity: 0.62;
+  text-align: center;
+  min-width: 0;
+}
+
+.level-click-summary strong {
+  color: var(--mint);
+  font-size: clamp(0.4rem, 0.76vw, 0.5rem);
+  font-weight: 500;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(64, 255, 175, 0.12);
+  overflow-wrap: anywhere;
+}
+
 .level-progress-track {
-  height: 14px;
+  height: 10px;
   overflow: hidden;
-  margin: 6px 0 8px;
+  margin: 0 0 3px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.78);
-}
-
-.level-progress-readout {
-  position: relative;
-  height: 12px;
-  margin-top: 20px;
-}
-
-.level-progress-readout strong {
-  position: absolute;
-  left: var(--level-progress, 0%);
-  bottom: 0;
-  min-width: max-content;
-  transform: translateX(-50%);
-  color: var(--bright);
-  font-size: clamp(0.34rem, 0.8vw, 0.42rem) !important;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.level-progress-readout strong::after {
-  content: "";
-  display: block;
-  width: 0;
-  height: 0;
-  margin: 2px auto 0;
-  border-left: 2px solid transparent;
-  border-right: 2px solid transparent;
-  border-top: 3px solid var(--bright);
 }
 
 .level-progress-track span {
@@ -276,9 +278,10 @@ h2 {
 }
 
 .level-progress-meta {
+  justify-content: center;
   color: var(--muted);
-  font-size: clamp(0.9rem, 2.7vw, 1.05rem);
-  font-weight: 850;
+  font-size: clamp(0.48rem, 1vw, 0.6rem);
+  font-weight: 650;
 }
 
 .label {
@@ -1084,7 +1087,7 @@ h2 {
 
 .daily-quest-kicker {
   color: var(--bright);
-  font-size: 1rem;
+  font-size: clamp(1.08rem, 2.2vw, 1.28rem);
   letter-spacing: 0;
 }
 
@@ -1224,8 +1227,14 @@ h2 {
 }
 
 .resource-panel > .level-progress-card {
-  border-top: 1px solid var(--line);
-  padding-inline: 0;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.1), rgba(7, 115, 69, 0.18)),
+    rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 22px rgba(64, 255, 175, 0.06);
 }
 
 .login-panel {
@@ -1711,15 +1720,13 @@ h2 {
               <span class="label">Rank</span>
               <strong id="currentLevelTitle">Bitty</strong>
             </div>
-            <div class="level-progress-readout">
-              <strong id="totalClicks">0</strong>
-            </div>
             <div class="level-progress-track" aria-label="Total click progress">
               <span id="levelProgressFill"></span>
             </div>
             <div class="level-progress-meta">
-              <span id="levelProgressStart">0</span>
-              <span id="levelProgressEnd">100</span>
+              <span class="level-click-summary">
+                <strong id="levelTotalClicks">0 / 100 total clicks · next Ritty</strong>
+              </span>
             </div>
           </div>
         </div>
@@ -2114,10 +2121,8 @@ const nodes = {
   perClick: document.querySelector("#perClick"),
   perSecond: document.querySelector("#perSecond"),
   currentLevelTitle: document.querySelector("#currentLevelTitle"),
-  totalClicks: document.querySelector("#totalClicks"),
+  levelTotalClicks: document.querySelector("#levelTotalClicks"),
   levelProgressFill: document.querySelector("#levelProgressFill"),
-  levelProgressStart: document.querySelector("#levelProgressStart"),
-  levelProgressEnd: document.querySelector("#levelProgressEnd"),
   focusText: document.querySelector("#focusText"),
   focusFill: document.querySelector("#focusFill"),
   sigilButton: document.querySelector("#sigilButton"),
@@ -2195,7 +2200,7 @@ nodes.sigilButton.addEventListener("click", (event) => {
   updateDailyQuestProgress("click", { amount: 1 });
   updateDailyQuestProgress("earn", { amount: gain });
   touchProgress();
-  popText(event.clientX, event.clientY, `${isCrit ? "CRIT " : ""}+${format(gain)}`, isCrit ? "crit" : "");
+  popText(event.clientX, event.clientY, `${isCrit ? "CRIT " : ""}+${formatEssence(gain)}`, isCrit ? "crit" : "");
   burstParticles(event.clientX, event.clientY, isCrit);
   renderComboHud(combo, isCrit);
   nodes.sigilButton.classList.add("clicked");
@@ -2218,7 +2223,7 @@ async function invokeRite() {
   nodes.accountStatus.textContent = "Deploy RitualInvocation contract first";
   addLog("Activate 2x Boost needs RitualInvocation.sol deployed before it can be onchain.");
   completeInvokeReward(reward);
-  addLog(`2x Boost activated locally. Essence surges +${format(reward)}.`);
+  addLog(`2x Boost activated locally. Essence surges +${formatEssence(reward)}.`);
   render();
 }
 
@@ -2246,7 +2251,7 @@ async function invokeRiteOnchain(reward) {
 
     completeInvokeReward(reward);
     nodes.accountStatus.textContent = "2x Boost activated onchain";
-    addLog(`Onchain 2x Boost activated. Essence surges +${format(reward)}.`);
+    addLog(`Onchain 2x Boost activated. Essence surges +${formatEssence(reward)}.`);
     render();
   } catch (error) {
     const message = getReadableError(error);
@@ -2408,7 +2413,7 @@ function renderShop() {
 }
 
 function render() {
-  nodes.essence.textContent = format(state.essence);
+  nodes.essence.textContent = formatEssence(state.essence);
   nodes.perClick.textContent = format(Math.ceil(state.perClick * state.multiplier));
   nodes.perSecond.textContent = format(Math.ceil(state.perSecond * state.multiplier));
   renderLevelProgress();
@@ -2433,7 +2438,7 @@ function render() {
     const cost = getCost(upgrade);
     card.disabled = state.essence < cost;
     card.querySelector(".upgrade-meta").textContent = `Owned ${owned}`;
-    card.querySelector(".upgrade-cost").textContent = `Cost ${format(cost)}`;
+    card.querySelector(".upgrade-cost").textContent = `Cost ${formatEssence(cost)}`;
   });
 
   saveState();
@@ -2957,7 +2962,7 @@ function renderDailyLogin() {
   nodes.dailyDay.textContent = String(todayDate.getDate());
   nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
-  nodes.dailyReward.textContent = `${format(reward)} essence`;
+  nodes.dailyReward.textContent = formatEssence(reward);
   if (!dailyRitualContractAddress) {
     nodes.dailyClaimButton.disabled = true;
     nodes.dailyClaimButton.textContent = "Deploy Daily Contract First";
@@ -3141,7 +3146,7 @@ function renderDailyQuest() {
   nodes.dailyQuestStatus.textContent = quest.claimed ? "Claimed" : complete ? "Complete" : "Active";
   nodes.dailyQuestTitle.textContent = quest.title;
   nodes.dailyQuestObjective.textContent = `${quest.objective}: ${format(progress)} / ${format(quest.target)}`;
-  nodes.dailyQuestReward.textContent = `+${format(quest.reward)} essence`;
+  nodes.dailyQuestReward.textContent = `+${formatEssence(quest.reward)}`;
   nodes.dailyQuestFill.style.width = `${percent}%`;
   nodes.dailyQuestClaimButton.disabled = !complete || quest.claimed;
   nodes.dailyQuestClaimButton.textContent = quest.claimed ? "Quest Claimed" : complete ? "Claim Quest Onchain" : "Complete Quest First";
@@ -3371,14 +3376,14 @@ function renderLeaderboard() {
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
           <span class="leader-name">${entry.name}</span>
-          <strong>${format(entry.score)}</strong>
+          <strong>${formatEssence(entry.score)}</strong>
         </li>
       `,
     )
     .join("");
   nodes.leaderboardPlayerRank.hidden = !showPlayerRank;
   nodes.leaderboardPlayerRank.innerHTML = showPlayerRank
-    ? `<span>Your rank #${playerIndex + 1}</span><strong>${format(playerEntry.score)}</strong>`
+    ? `<span>Your rank #${playerIndex + 1}</span><strong>${formatEssence(playerEntry.score)}</strong>`
     : "";
   nodes.submitScoreButton.disabled = state.totalEarned <= 0;
   nodes.submitScoreButton.textContent = ritualScoreContractAddress ? "Submit Score Onchain" : "Deploy Score Contract First";
@@ -3387,7 +3392,7 @@ function renderLeaderboard() {
   } else if (!state.account?.address) {
     nodes.submitScoreStatus.textContent = "Connect wallet to submit your best score onchain.";
   } else {
-    nodes.submitScoreStatus.textContent = `Ready to submit ${format(state.totalEarned)} total essence.`;
+    nodes.submitScoreStatus.textContent = `Ready to submit ${formatEssence(state.totalEarned)} total essence.`;
   }
 }
 
@@ -3463,8 +3468,8 @@ function updateShareCard() {
   nodes.shareName.textContent = shareXProfileName && shareXProfileHandle
     ? `${shareXProfileName} · @${shareXProfileHandle}`
     : `@${handle}`;
-  nodes.shareEssence.textContent = format(state.essence);
-  nodes.shareEarned.textContent = format(state.totalEarned);
+  nodes.shareEssence.textContent = formatEssence(state.essence);
+  nodes.shareEarned.textContent = formatEssence(state.totalEarned);
   nodes.shareClicks.textContent = format(state.totalClicks);
   nodes.shareIncome.textContent = `${format(state.perSecond)}/s`;
   nodes.shareAchievements.textContent = `${unlocked}/${achievements.length} achievements`;
@@ -3497,8 +3502,8 @@ function postShareToX() {
   const level = getCurrentLevel();
   const text = [
     `I reached ${level.title} in Ritual Clicker.`,
-    `Essence: ${format(state.essence)}`,
-    `Total earned: ${format(state.totalEarned)}`,
+    `Essence: ${formatEssence(state.essence)}`,
+    `Total earned: ${formatEssence(state.totalEarned)}`,
     `Clicks: ${format(state.totalClicks)}`,
   ].join("\n");
   const url = new URL("https://twitter.com/intent/tweet");
@@ -3549,8 +3554,8 @@ async function renderShareCardCanvas() {
   context.fillText(`@${handle}`, 292, 198);
 
   const stats = [
-    { label: "Total Earned", value: format(state.totalEarned), x: 78, width: 310, featured: true },
-    { label: "Essence", value: format(state.essence), x: 410, width: 220 },
+    { label: "Total Earned", value: formatEssence(state.totalEarned), x: 78, width: 310, featured: true },
+    { label: "Essence", value: formatEssence(state.essence), x: 410, width: 220 },
     { label: "Total Clicks", value: format(state.totalClicks), x: 652, width: 220 },
     { label: "Income", value: `${format(state.perSecond)}/s`, x: 894, width: 220 },
   ];
@@ -3816,16 +3821,14 @@ function renderLevelProgress() {
   const end = nextLevel ? nextLevel.clicks : currentLevel.clicks;
   const range = Math.max(1, end - start);
   const progress = nextLevel ? Math.min(100, ((state.totalClicks - start) / range) * 100) : 100;
-  const labelProgress = Math.min(96, Math.max(4, progress));
 
   nodes.currentLevelTitle.textContent = currentLevel.title;
   nodes.sigilButton.style.setProperty("--aura", aura.aura);
   nodes.sigilButton.style.setProperty("--aura-soft", aura.soft);
   nodes.levelProgressFill.style.width = `${progress}%`;
-  nodes.totalClicks.parentElement.style.setProperty("--level-progress", `${labelProgress}%`);
-  nodes.levelProgressStart.textContent = format(start);
-  nodes.levelProgressEnd.textContent = nextLevel ? format(end) : "Max";
-  nodes.totalClicks.textContent = format(state.totalClicks);
+  nodes.levelTotalClicks.textContent = nextLevel
+    ? `${format(state.totalClicks)} / ${format(end)} total clicks · next ${nextLevel.title}`
+    : `${format(state.totalClicks)} total clicks · max rank`;
 }
 
 function getCurrentLevel() {
@@ -3950,6 +3953,10 @@ function format(value) {
   if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(1)}M`;
   if (number >= 1_000) return `${(number / 1_000).toFixed(1)}K`;
   return String(number);
+}
+
+function formatEssence(value) {
+  return `❖ ${format(value)}`;
 }
 
 function shortenAddress(address) {
