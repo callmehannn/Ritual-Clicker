@@ -766,15 +766,27 @@ h2 {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  color: #02120b;
-  background: var(--bright);
-  font-size: 1rem;
-  filter: saturate(1.1);
+  border: 1px solid rgba(64, 255, 175, 0.36);
+  color: #dfffee;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(233, 255, 246, 0.35), transparent 30%),
+    linear-gradient(135deg, rgba(64, 255, 175, 0.88), rgba(7, 115, 69, 0.86) 58%, rgba(2, 18, 11, 0.92));
+  box-shadow:
+    inset 0 0 12px rgba(233, 255, 246, 0.16),
+    0 0 16px rgba(64, 255, 175, 0.24);
+  font-size: 1.08rem;
+  filter: saturate(1.16);
+  text-shadow: 0 0 10px rgba(2, 18, 11, 0.78);
 }
 
 .achievements li:not(.is-unlocked) .achievement-badge {
-  color: var(--muted);
-  background: rgba(64, 255, 175, 0.1);
+  border-color: rgba(64, 255, 175, 0.16);
+  color: rgba(156, 232, 199, 0.58);
+  background:
+    linear-gradient(135deg, rgba(64, 255, 175, 0.16), rgba(7, 115, 69, 0.12)),
+    rgba(0, 0, 0, 0.54);
+  box-shadow: inset 0 0 10px rgba(64, 255, 175, 0.05);
+  text-shadow: none;
 }
 
 .achievement-copy {
@@ -802,8 +814,22 @@ h2 {
 
 .achievements li.is-onchain .achievement-badge,
 .achievements li.is-onchain .achievement-claim {
-  background: var(--bright);
   color: #02120b;
+}
+
+.achievements li.is-onchain .achievement-badge {
+  border-color: rgba(64, 255, 175, 0.72);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.42), transparent 30%),
+    linear-gradient(135deg, #8dffd1, var(--bright) 48%, var(--deep));
+  box-shadow:
+    inset 0 0 14px rgba(255, 255, 255, 0.2),
+    0 0 24px rgba(64, 255, 175, 0.42);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.achievements li.is-onchain .achievement-claim {
+  background: var(--bright);
 }
 
 .achievement-claim {
