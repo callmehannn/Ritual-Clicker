@@ -1688,7 +1688,11 @@ h2 {
             X username
             <input id="shareUsername" type="text" placeholder="@username" autocomplete="off">
           </label>
-          <p class="share-profile-status" id="shareProfileStatus">Type an X username to auto-load the profile picture after deploy.</p>
+          <label>
+            Profile picture
+            <input id="shareAvatarInput" type="file" accept="image/*">
+          </label>
+          <p class="share-profile-status" id="shareProfileStatus">Upload a profile picture for the share card.</p>
         </div>
         <section class="share-card" id="shareCard" aria-label="Share card preview">
           <div class="share-card-main">
@@ -1768,6 +1772,7 @@ let cloudSaveTimer = null;
 let isLoadingCloudState = false;
 let walletConnectProvider = null;
 let cloudLeaderboard = [];
+let shareAvatarDataUrl = "";
 let shareXAvatarDataUrl = "";
 let shareXProfileHandle = "";
 let shareXProfileName = "";
@@ -1939,6 +1944,7 @@ const nodes = {
   closeShareButton: document.querySelector("#closeShareButton"),
   shareUsername: document.querySelector("#shareUsername"),
   shareProfileStatus: document.querySelector("#shareProfileStatus"),
+  shareAvatarInput: document.querySelector("#shareAvatarInput"),
   shareAvatar: document.querySelector("#shareAvatar"),
   shareRank: document.querySelector("#shareRank"),
   shareName: document.querySelector("#shareName"),
@@ -2126,6 +2132,7 @@ nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 nodes.shareButton.addEventListener("click", openShareModal);
 nodes.closeShareButton.addEventListener("click", closeShareModal);
 nodes.shareUsername.addEventListener("input", handleShareUsernameInput);
+nodes.shareAvatarInput.addEventListener("change", handleShareAvatar);
 nodes.downloadShareButton.addEventListener("click", downloadShareCard);
 nodes.postShareButton.addEventListener("click", postShareToX);
 nodes.shareModal.addEventListener("click", (event) => {
@@ -2979,13 +2986,32 @@ function closeShareModal() {
   nodes.shareModal.hidden = true;
 }
 
+function handleShareAvatar(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    nodes.shareProfileStatus.textContent = "Upload an image file for the card.";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    shareAvatarDataUrl = String(reader.result || "");
+    nodes.shareProfileStatus.textContent = "Using uploaded profile picture.";
+    updateShareCard();
+  });
+  reader.readAsDataURL(file);
+}
+
 function handleShareUsernameInput() {
   shareXAvatarDataUrl = "";
   shareXProfileHandle = "";
   shareXProfileName = "";
   updateShareCard();
-  window.clearTimeout(shareProfileLookupTimer);
-  shareProfileLookupTimer = window.setTimeout(loadShareXProfile, 500);
+  nodes.shareProfileStatus.textContent = shareAvatarDataUrl
+    ? "Using uploaded profile picture."
+    : "Upload a profile picture for the share card.";
 }
 
 function getShareHandle() {
@@ -2996,6 +3022,7 @@ function getShareHandle() {
 }
 
 function getShareAvatarSource(handle) {
+  if (shareAvatarDataUrl) return shareAvatarDataUrl;
   if (shareXAvatarDataUrl) return shareXAvatarDataUrl;
   const initial = (handle[0] || "R").toUpperCase();
   const svg = `
@@ -3006,37 +3033,6 @@ function getShareAvatarSource(handle) {
     </svg>
   `;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
-async function loadShareXProfile() {
-  const typed = nodes.shareUsername.value.trim().replace(/^@/, "");
-  const username = typed.replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
-  if (!username) {
-    nodes.shareProfileStatus.textContent = "Type an X username to auto-load the profile picture after deploy.";
-    return;
-  }
-
-  if (window.location.protocol === "file:") {
-    nodes.shareProfileStatus.textContent = "Auto X profile works after deploy on Vercel. Manual upload still works here.";
-    return;
-  }
-
-  nodes.shareProfileStatus.textContent = "Loading X profile...";
-  try {
-    const result = await fetch(`/api/x-profile?username=${encodeURIComponent(username)}`);
-    const profile = await result.json();
-    if (!result.ok) throw new Error(profile.error || "Could not load X profile");
-
-    shareXProfileHandle = profile.username || username;
-    shareXProfileName = profile.name || "";
-    shareXAvatarDataUrl = profile.profile_image_data_url || profile.profile_image_url || "";
-    nodes.shareProfileStatus.textContent = shareXAvatarDataUrl
-      ? `Loaded @${shareXProfileHandle} from X.`
-      : `Loaded @${shareXProfileHandle}, but no profile picture was returned.`;
-    updateShareCard();
-  } catch (error) {
-    nodes.shareProfileStatus.textContent = error.message || "Could not load X profile.";
-  }
 }
 
 function updateShareCard() {
