@@ -1004,8 +1004,8 @@ h2 {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 4px;
-  min-height: 132px;
+  gap: 6px;
+  min-height: 112px;
   padding: 10px;
   border: 1px solid rgba(64, 255, 175, 0.28);
   border-radius: 8px;
@@ -1025,31 +1025,6 @@ h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 3.15rem;
   line-height: 0.9;
-}
-
-.daily-week {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  width: 100%;
-  margin-top: 5px;
-}
-
-.daily-week span {
-  height: 13px;
-  border: 1px solid rgba(64, 255, 175, 0.18);
-  border-radius: 3px;
-  color: var(--muted);
-  font-size: 0.48rem;
-  line-height: 11px;
-  text-align: center;
-}
-
-.daily-week span.is-today {
-  border-color: var(--bright);
-  background: var(--bright);
-  color: #02120b;
-  font-weight: 900;
 }
 
 .daily-calendar-info {
@@ -1798,7 +1773,6 @@ h2 {
               <span class="daily-month" id="dailyMonth">May</span>
               <strong class="daily-day" id="dailyDay">21</strong>
               <span class="daily-weekday" id="dailyWeekday">Thursday</span>
-              <div class="daily-week" id="dailyWeek" aria-label="Current week"></div>
             </div>
             <div class="daily-calendar-info">
               <div class="daily-stat">
@@ -2159,7 +2133,6 @@ const nodes = {
   dailyMonth: document.querySelector("#dailyMonth"),
   dailyDay: document.querySelector("#dailyDay"),
   dailyWeekday: document.querySelector("#dailyWeekday"),
-  dailyWeek: document.querySelector("#dailyWeek"),
   dailyStreak: document.querySelector("#dailyStreak"),
   dailyReward: document.querySelector("#dailyReward"),
   dailyClaimButton: document.querySelector("#dailyClaimButton"),
@@ -2983,9 +2956,6 @@ function renderDailyLogin() {
   nodes.dailyMonth.textContent = new Intl.DateTimeFormat("en-US", { month: "short" }).format(todayDate);
   nodes.dailyDay.textContent = String(todayDate.getDate());
   nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
-  nodes.dailyWeek.innerHTML = getWeekDays(todayDate)
-    .map((date) => `<span class="${date.toDateString() === todayDate.toDateString() ? "is-today" : ""}">${date.getDate()}</span>`)
-    .join("");
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
   nodes.dailyReward.textContent = `${format(reward)} essence`;
   if (!dailyRitualContractAddress) {

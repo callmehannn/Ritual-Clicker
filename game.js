@@ -205,7 +205,6 @@ const nodes = {
   dailyMonth: document.querySelector("#dailyMonth"),
   dailyDay: document.querySelector("#dailyDay"),
   dailyWeekday: document.querySelector("#dailyWeekday"),
-  dailyWeek: document.querySelector("#dailyWeek"),
   dailyStreak: document.querySelector("#dailyStreak"),
   dailyReward: document.querySelector("#dailyReward"),
   dailyClaimButton: document.querySelector("#dailyClaimButton"),
@@ -1029,9 +1028,6 @@ function renderDailyLogin() {
   nodes.dailyMonth.textContent = new Intl.DateTimeFormat("en-US", { month: "short" }).format(todayDate);
   nodes.dailyDay.textContent = String(todayDate.getDate());
   nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
-  nodes.dailyWeek.innerHTML = getWeekDays(todayDate)
-    .map((date) => `<span class="${date.toDateString() === todayDate.toDateString() ? "is-today" : ""}">${date.getDate()}</span>`)
-    .join("");
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
   nodes.dailyReward.textContent = `${format(reward)} essence`;
   if (!dailyRitualContractAddress) {

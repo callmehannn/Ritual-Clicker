@@ -995,8 +995,8 @@ h2 {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 4px;
-  min-height: 132px;
+  gap: 6px;
+  min-height: 112px;
   padding: 10px;
   border: 1px solid rgba(64, 255, 175, 0.28);
   border-radius: 8px;
@@ -1016,31 +1016,6 @@ h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 3.15rem;
   line-height: 0.9;
-}
-
-.daily-week {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  width: 100%;
-  margin-top: 5px;
-}
-
-.daily-week span {
-  height: 13px;
-  border: 1px solid rgba(64, 255, 175, 0.18);
-  border-radius: 3px;
-  color: var(--muted);
-  font-size: 0.48rem;
-  line-height: 11px;
-  text-align: center;
-}
-
-.daily-week span.is-today {
-  border-color: var(--bright);
-  background: var(--bright);
-  color: #02120b;
-  font-weight: 900;
 }
 
 .daily-calendar-info {
