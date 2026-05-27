@@ -3114,7 +3114,7 @@ async function renderShareCardCanvas() {
   context.fillRect(0, 0, width, height);
 
   const lowerGlow = context.createRadialGradient(width * 0.8, height * 0.92, 10, width * 0.8, height * 0.92, 520);
-  lowerGlow.addColorStop(0, "rgba(64, 255, 175, 0.16)");
+  lowerGlow.addColorStop(0, aura.soft);
   lowerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
   context.fillStyle = lowerGlow;
   context.fillRect(0, 0, width, height);
