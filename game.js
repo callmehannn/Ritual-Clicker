@@ -42,6 +42,15 @@ let shareXAvatarDataUrl = "";
 let shareXProfileHandle = "";
 let shareXProfileName = "";
 let shareProfileLookupTimer = 0;
+const dailyChainStatus = {
+  address: "",
+  date: "",
+  status: "idle",
+  canClaim: null,
+  reward: 0,
+  nextStreak: 1,
+};
+
 const comboRuntime = {
   count: 0,
   lastClickAt: 0,
@@ -439,6 +448,7 @@ function tick() {
 
   if (Date.now() > state.multiplierEndsAt) {
     state.multiplier = 1;
+    state.multiplierEndsAt = 0;
   }
 
   const gain = Math.ceil(state.perSecond * state.multiplier);
@@ -477,8 +487,11 @@ function render() {
   renderLevelProgress();
   nodes.focusText.textContent = `${Math.floor(state.focus)}%`;
   nodes.focusFill.style.width = `${state.focus}%`;
-  nodes.invokeButton.disabled = state.focus < 100;
-  nodes.invokeButton.textContent = "Activate 2x Boost";
+  const boostSecondsLeft = getBoostSecondsLeft();
+  nodes.invokeButton.disabled = boostSecondsLeft > 0 || state.focus < 100;
+  nodes.invokeButton.textContent = boostSecondsLeft > 0
+    ? `2x Boost Active · ${boostSecondsLeft}s`
+    : "Activate 2x Boost";
   nodes.statusText.textContent = getStatusText();
   renderAccount();
   renderDailyLogin();
@@ -519,10 +532,16 @@ function getCost(upgrade) {
 }
 
 function getStatusText() {
-  if (state.multiplier > 1) return "2x Boost active: clicks and passive income are doubled for 15 seconds.";
+  const boostSecondsLeft = getBoostSecondsLeft();
+  if (boostSecondsLeft > 0) return `2x Boost active: clicks and passive income are doubled for ${boostSecondsLeft}s.`;
   if (state.focus >= 100) return "Boost Charge is full. Activate 2x Boost when ready.";
   if (state.perSecond > 0) return "The chants are working on their own. The sigil still hungers.";
   return "Tap the sigil to start the circle.";
+}
+
+function getBoostSecondsLeft() {
+  if (state.multiplier <= 1 || !state.multiplierEndsAt) return 0;
+  return Math.max(0, Math.ceil((state.multiplierEndsAt - Date.now()) / 1000));
 }
 
 function renderAccount() {
@@ -563,6 +582,7 @@ async function connectWallet({ mode }) {
     }
 
     await signInAndSyncWallet(address, mode, provider);
+    await refreshDailyChainStatus(address, provider);
     addLog(`${mode === "ritual" ? "Ritual Testnet" : "MetaMask"} synced: ${shortenAddress(address)}.`);
     render();
   } catch (error) {
@@ -729,6 +749,7 @@ async function initializeCloudSession() {
 
     attachWalletAccount(address, state.account?.type || "metamask");
     await syncCloudProgress(address, state.account?.type || "metamask");
+    await refreshDailyChainStatus(address);
     render();
   } catch (error) {
     console.warn("Cloud session restore failed", error);
@@ -992,12 +1013,19 @@ function getSessionWalletAddress(session) {
 
 function renderDailyLogin() {
   const today = getDateKey();
-  const claimed = hasClaimedDailyToday();
+  const walletAddress = state.account?.address?.toLowerCase() || "";
+  const hasWallet = Boolean(walletAddress);
+  const statusFresh = isDailyChainStatusFresh(walletAddress, today);
+  const chainClaimed = statusFresh && dailyChainStatus.canClaim === false;
+  const checking = dailyRitualContractAddress && hasWallet && dailyChainStatus.status === "checking";
+  const checkFailed = dailyRitualContractAddress && hasWallet && dailyChainStatus.status === "error";
+  const needsCheck = dailyRitualContractAddress && hasWallet && !statusFresh && !checkFailed;
+  const claimed = hasClaimedDailyToday() || chainClaimed;
   const nextStreak = claimed ? state.dailyStreak : state.dailyLastClaimDate === getDateKey(-1) ? state.dailyStreak + 1 : 1;
-  const reward = getDailyReward(nextStreak);
+  const reward = statusFresh && dailyChainStatus.reward > 0 ? dailyChainStatus.reward : getDailyReward(nextStreak);
   const todayDate = new Date();
 
-  nodes.dailyStatus.textContent = claimed ? "Claimed" : "Ready";
+  nodes.dailyStatus.textContent = checking || needsCheck ? "Checking" : claimed ? "Claimed" : "Ready";
   nodes.dailyMonth.textContent = new Intl.DateTimeFormat("en-US", { month: "short" }).format(todayDate);
   nodes.dailyDay.textContent = String(todayDate.getDate());
   nodes.dailyWeekday.textContent = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(todayDate);
@@ -1006,17 +1034,77 @@ function renderDailyLogin() {
     .join("");
   nodes.dailyStreak.textContent = `${state.dailyStreak} day${state.dailyStreak === 1 ? "" : "s"}`;
   nodes.dailyReward.textContent = `${format(reward)} essence`;
-  nodes.dailyClaimButton.disabled = dailyRitualContractAddress ? claimed : false;
-  nodes.dailyClaimButton.textContent = dailyRitualContractAddress
-    ? claimed
-      ? "Come Back Tomorrow"
-      : "Claim Onchain Daily"
-    : "Deploy Daily Contract First";
+  if (!dailyRitualContractAddress) {
+    nodes.dailyClaimButton.disabled = true;
+    nodes.dailyClaimButton.textContent = "Deploy Daily Contract First";
+  } else if (!hasWallet) {
+    nodes.dailyClaimButton.disabled = true;
+    nodes.dailyClaimButton.textContent = "Connect Wallet First";
+  } else if (checking || needsCheck) {
+    nodes.dailyClaimButton.disabled = true;
+    nodes.dailyClaimButton.textContent = "Checking Daily...";
+  } else if (checkFailed) {
+    nodes.dailyClaimButton.disabled = true;
+    nodes.dailyClaimButton.textContent = "Reconnect Wallet";
+  } else {
+    nodes.dailyClaimButton.disabled = claimed;
+    nodes.dailyClaimButton.textContent = claimed ? "Come Back Tomorrow" : "Claim Onchain Daily";
+  }
   renderDailyQuest();
 }
 
 function hasClaimedDailyToday() {
   return state.dailyLastClaimDate === getDateKey();
+}
+
+function isDailyChainStatusFresh(walletAddress, dateKey = getDateKey()) {
+  return (
+    dailyChainStatus.address === walletAddress &&
+    dailyChainStatus.date === dateKey &&
+    dailyChainStatus.status === "checked"
+  );
+}
+
+async function refreshDailyChainStatus(address, provider = window.ethereum) {
+  if (!dailyRitualContractAddress || !address || !provider) return false;
+  const walletAddress = address.toLowerCase();
+  const today = getDateKey();
+  if (isDailyChainStatusFresh(walletAddress, today) || dailyChainStatus.status === "checking") return true;
+
+  dailyChainStatus.address = walletAddress;
+  dailyChainStatus.date = today;
+  dailyChainStatus.status = "checking";
+  dailyChainStatus.canClaim = null;
+  renderDailyLogin();
+
+  try {
+    await switchOrAddRitualTestnet(provider);
+    const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
+    const browserProvider = new BrowserProvider(provider);
+    const contract = new Contract(dailyRitualContractAddress, dailyRitualAbi, browserProvider);
+    const [canClaim, reward, nextStreak] = await contract.previewClaim(address);
+    dailyChainStatus.status = "checked";
+    dailyChainStatus.canClaim = Boolean(canClaim);
+    dailyChainStatus.reward = Number(reward) || 0;
+    dailyChainStatus.nextStreak = Number(nextStreak) || 1;
+
+    if (!canClaim) {
+      state.dailyLastClaimDate = today;
+      state.dailyStreak = Math.max(state.dailyStreak || 0, Number(nextStreak) || 0);
+      touchProgress();
+      saveState();
+    }
+
+    renderDailyLogin();
+    return true;
+  } catch (error) {
+    console.warn("Daily onchain status check failed", error);
+    dailyChainStatus.status = "error";
+    dailyChainStatus.canClaim = null;
+    nodes.accountStatus.textContent = `Daily check failed: ${getReadableError(error)}`;
+    renderDailyLogin();
+    return false;
+  }
 }
 
 function getDailyReward(streak) {
@@ -1202,6 +1290,12 @@ function hashString(text) {
 }
 
 async function claimDailyReward() {
+  if (dailyRitualContractAddress && !state.account?.address) {
+    nodes.accountStatus.textContent = "Connect wallet before claiming daily.";
+    renderDailyLogin();
+    return;
+  }
+
   if (dailyRitualContractAddress) {
     await claimOnchainDailyReward();
     return;
@@ -1224,6 +1318,9 @@ async function claimOnchainDailyReward() {
 
     await switchOrAddRitualTestnet(provider);
     attachWalletAccount(address, "ritual");
+    if (!isDailyChainStatusFresh(address.toLowerCase())) {
+      await refreshDailyChainStatus(address, provider);
+    }
 
     const { BrowserProvider, Contract } = await import("https://esm.sh/ethers@6.13.5");
     const browserProvider = new BrowserProvider(provider);
@@ -1234,6 +1331,16 @@ async function claimOnchainDailyReward() {
     if (!canClaim) {
       nodes.accountStatus.textContent = "Daily already claimed onchain";
       addLog("Daily Login is already claimed today on Ritual Testnet.");
+      dailyChainStatus.address = address.toLowerCase();
+      dailyChainStatus.date = getDateKey();
+      dailyChainStatus.status = "checked";
+      dailyChainStatus.canClaim = false;
+      dailyChainStatus.reward = Number(reward) || 0;
+      dailyChainStatus.nextStreak = Number(nextStreak) || state.dailyStreak || 1;
+      state.dailyLastClaimDate = getDateKey();
+      state.dailyStreak = Math.max(state.dailyStreak || 0, Number(nextStreak) || 0);
+      touchProgress();
+      saveState();
       render();
       return;
     }
@@ -1248,6 +1355,12 @@ async function claimOnchainDailyReward() {
     state.essence += rewardNumber;
     state.totalEarned += rewardNumber;
     state.ritualTestnetConnected = true;
+    dailyChainStatus.address = address.toLowerCase();
+    dailyChainStatus.date = getDateKey();
+    dailyChainStatus.status = "checked";
+    dailyChainStatus.canClaim = false;
+    dailyChainStatus.reward = rewardNumber;
+    dailyChainStatus.nextStreak = Number(nextStreak);
     updateDailyQuestProgress("daily", { amount: 1 });
     updateDailyQuestProgress("earn", { amount: rewardNumber });
     touchProgress();
@@ -1480,20 +1593,21 @@ async function renderShareCardCanvas() {
   context.fillText(`@${handle}`, 292, 198);
 
   const stats = [
-    ["Essence", format(state.essence)],
-    ["Total Earned", format(state.totalEarned)],
-    ["Total Clicks", format(state.totalClicks)],
-    ["Income", `${format(state.perSecond)}/s`],
+    { label: "Total Earned", value: format(state.totalEarned), x: 78, width: 310, featured: true },
+    { label: "Essence", value: format(state.essence), x: 410, width: 220 },
+    { label: "Total Clicks", value: format(state.totalClicks), x: 652, width: 220 },
+    { label: "Income", value: `${format(state.perSecond)}/s`, x: 894, width: 220 },
   ];
-  stats.forEach(([label, value], index) => {
-    const x = 78 + index * 276;
-    drawRoundedRect(context, x, 310, 240, 128, 18, "rgba(0, 0, 0, 0.56)", "rgba(64, 255, 175, 0.42)");
+  stats.forEach((stat) => {
+    const fill = stat.featured ? "rgba(2, 22, 15, 0.72)" : "rgba(0, 0, 0, 0.56)";
+    const stroke = stat.featured ? aura.aura : "rgba(64, 255, 175, 0.42)";
+    drawRoundedRect(context, stat.x, 310, stat.width, 128, 18, fill, stroke);
     context.fillStyle = "#9ee8c5";
     context.font = "800 24px Arial, sans-serif";
-    context.fillText(label, x + 24, 352);
+    context.fillText(stat.label, stat.x + 24, 352);
     context.fillStyle = "#40ffaf";
-    context.font = "900 44px Arial, sans-serif";
-    context.fillText(value, x + 24, 405);
+    context.font = stat.featured ? "900 56px Arial, sans-serif" : "900 44px Arial, sans-serif";
+    context.fillText(stat.value, stat.x + 24, 407);
   });
 
   context.fillStyle = "#b9ffe1";
@@ -1804,7 +1918,7 @@ function createComboHud() {
     <strong>1x</strong>
     <em>Crit ready</em>
   `;
-  nodes.sigilButton.appendChild(node);
+  nodes.sigilButton.insertAdjacentElement("afterend", node);
   return node;
 }
 
