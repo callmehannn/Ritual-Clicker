@@ -3,6 +3,7 @@ const supabaseUrl = "https://mtylbhyptcoeiquvsrzc.supabase.co";
 const supabaseAnonKey = "sb_publishable_DnSluUiFZLIF-k176e7joA_NFhgwFZe";
 const supabaseTable = "ritual_clicker_saves";
 const legacySaveKey = "ritual-clicker-state-v2";
+const localSaveKey = "ritual-clicker-local-cache-v1";
 const walletConnectProjectId = "71bea141c12e2b6160ce94e7a89924ce";
 const dailyRitualContractAddress = "0x98c49CC264Cc8460144500F305231f92a5542128";
 const ritualScoreContractAddress = "0x55d5C4B9f92e956a10665f143c561B0F10c881d5";
@@ -372,6 +373,7 @@ nodes.ritualTestnetButton.addEventListener("click", () => connectWallet({ mode: 
 nodes.logoutButton.addEventListener("click", async () => {
   nodes.accountStatus.textContent = "Saving progress...";
   await flushCloudSave();
+  clearLocalState();
   if (supabaseClient) {
     await supabaseClient.auth.signOut({ scope: "local" });
   }
@@ -390,6 +392,7 @@ if (window.ethereum?.on) {
       if (supabaseClient) {
         await supabaseClient.auth.signOut({ scope: "local" });
       }
+      clearLocalState();
       cloudSession = null;
       Object.assign(state, defaultState());
       render();
@@ -398,6 +401,7 @@ if (window.ethereum?.on) {
 
     nodes.accountStatus.textContent = "Wallet changed. Connect again to sync.";
     await flushCloudSave();
+    clearLocalState({ keepWalletCache: true });
     Object.assign(state, defaultState());
     render();
   });
@@ -741,7 +745,7 @@ async function initializeCloudSession() {
     cloudSession = data.session;
     if (!cloudSession) return;
 
-    const address = state.account?.address || getSessionWalletAddress(cloudSession);
+    const address = getSessionWalletAddress(cloudSession) || state.account?.address;
     if (!address) return;
 
     attachWalletAccount(address, state.account?.type || "metamask");
@@ -776,7 +780,8 @@ async function syncCloudProgress(address, mode) {
       address,
     };
 
-    const mergedState = mergeProgressStates(remoteState, legacyState, hasMeaningfulProgress(state) ? state : null);
+    const localState = state.account?.address?.toLowerCase() === walletAddress && hasMeaningfulProgress(state) ? state : null;
+    const mergedState = mergeProgressStates(remoteState, legacyState, localState);
 
     if (mergedState && hasMeaningfulProgress(mergedState)) {
       Object.assign(state, {
@@ -784,9 +789,11 @@ async function syncCloudProgress(address, mode) {
         account,
         ritualTestnetConnected: mode === "ritual" || mergedState.ritualTestnetConnected,
       });
+      saveLocalState();
       await saveCloudState({ force: true, skipRemoteCheck: true, silent: true });
     } else {
       state.account = account;
+      saveLocalState();
     }
     clearLegacyStateForWallet(address);
     await loadCloudLeaderboard();
@@ -858,6 +865,7 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
       account,
       ritualTestnetConnected: state.ritualTestnetConnected || progress.ritualTestnetConnected,
     });
+    saveLocalState();
   }
   const { error } = await supabaseClient.from(supabaseTable).upsert(
     {
@@ -893,6 +901,7 @@ function restoreRemoteProgress(remoteState) {
     account,
     ritualTestnetConnected: currentRitualStatus || remoteState.ritualTestnetConnected,
   });
+  saveLocalState();
 }
 
 function shouldKeepRemoteProgress(remoteState, localState) {
@@ -2085,6 +2094,10 @@ function defaultState() {
 }
 
 function loadState() {
+  try {
+    const saved = normalizeState(JSON.parse(localStorage.getItem(localSaveKey)));
+    if (saved && hasMeaningfulProgress(saved)) return saved;
+  } catch {}
   return defaultState();
 }
 
@@ -2154,11 +2167,35 @@ function normalizeDailyQuest(quest) {
 }
 
 function saveState() {
+  saveLocalState();
   saveCloudState();
 }
 
 function touchProgress() {
   state.progressUpdatedAt = Date.now();
+  saveLocalState();
+}
+
+function saveLocalState() {
+  try {
+    const progress = createPortableState();
+    if (!hasMeaningfulProgress(progress)) return;
+    const encoded = JSON.stringify(progress);
+    localStorage.setItem(localSaveKey, encoded);
+    const address = progress.account?.address?.toLowerCase();
+    if (address) {
+      localStorage.setItem(`${localSaveKey}:wallet:${address}`, encoded);
+    }
+  } catch {}
+}
+
+function clearLocalState({ keepWalletCache = false } = {}) {
+  try {
+    if (!keepWalletCache && state.account?.address) {
+      localStorage.removeItem(`${localSaveKey}:wallet:${state.account.address.toLowerCase()}`);
+    }
+    localStorage.removeItem(localSaveKey);
+  } catch {}
 }
 
 function loadLegacyStateForWallet(address) {
