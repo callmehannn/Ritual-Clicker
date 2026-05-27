@@ -407,6 +407,18 @@ if (window.ethereum?.on) {
   });
 }
 
+window.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    saveLocalState();
+    flushCloudSave();
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  saveLocalState();
+  flushCloudSave();
+});
+
 window.addEventListener("pagehide", () => {
   flushCloudSave();
 });
@@ -2168,7 +2180,7 @@ function normalizeDailyQuest(quest) {
 
 function saveState() {
   saveLocalState();
-  saveCloudState();
+  saveCloudState({ force: true, silent: true });
 }
 
 function touchProgress() {
