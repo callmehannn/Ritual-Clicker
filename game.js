@@ -769,7 +769,7 @@ async function syncCloudProgress(address, mode) {
     if (error) throw error;
 
     const remoteState = normalizeState(data?.[0]?.progress);
-    const legacyState = loadLegacyStateForWallet(address);
+    const legacyState = hasMeaningfulProgress(remoteState) ? null : loadLegacyStateForWallet(address);
     const account = {
       type: mode,
       label: shortenAddress(address),
@@ -788,6 +788,7 @@ async function syncCloudProgress(address, mode) {
     } else {
       state.account = account;
     }
+    clearLegacyStateForWallet(address);
     await loadCloudLeaderboard();
     nodes.accountStatus.textContent = `Wallet synced: ${shortenAddress(address)}`;
   } catch (error) {
@@ -995,7 +996,6 @@ function mergeCurrentPlayerIntoLeaderboard(entries) {
 }
 
 function createPortableState() {
-  if (hasMeaningfulProgress(state)) touchProgress();
   return {
     ...state,
     log: [],
@@ -2092,10 +2092,10 @@ function normalizeState(saved) {
   const base = defaultState();
   if (!saved || typeof saved !== "object") return null;
 
-  return {
+  const normalized = {
     ...base,
     ...saved,
-    owned: { ...base.owned, ...saved.owned },
+    owned: normalizeOwned(saved.owned),
     achievements: { ...base.achievements, ...saved.achievements },
     onchainAchievements: { ...base.onchainAchievements, ...saved.onchainAchievements },
     milestones: Array.isArray(saved.milestones) ? saved.milestones : base.milestones,
@@ -2104,6 +2104,35 @@ function normalizeState(saved) {
     dailyStreak: Number.isFinite(saved.dailyStreak) ? saved.dailyStreak : base.dailyStreak,
     dailyQuest: normalizeDailyQuest(saved.dailyQuest),
     progressUpdatedAt: Number.isFinite(saved.progressUpdatedAt) ? saved.progressUpdatedAt : base.progressUpdatedAt,
+  };
+
+  return restoreEconomyFromOwned(normalized);
+}
+
+function normalizeOwned(owned) {
+  return upgrades.reduce((result, upgrade) => {
+    const count = Math.max(0, Math.floor(Number(owned?.[upgrade.id]) || 0));
+    if (count > 0) result[upgrade.id] = count;
+    return result;
+  }, {});
+}
+
+function restoreEconomyFromOwned(progressState) {
+  if (!progressState || getOwnedCount(progressState) <= 0) return progressState;
+
+  const economy = defaultState();
+  upgrades.forEach((upgrade) => {
+    const count = Math.max(0, Math.floor(Number(progressState.owned?.[upgrade.id]) || 0));
+    for (let index = 0; index < count; index += 1) {
+      upgrade.apply(economy);
+    }
+  });
+
+  return {
+    ...progressState,
+    perClick: economy.perClick,
+    perSecond: economy.perSecond,
+    invokeBonus: economy.invokeBonus,
   };
 }
 
@@ -2152,6 +2181,18 @@ function loadLegacyStateForWallet(address) {
   return null;
 }
 
+function clearLegacyStateForWallet(address) {
+  const walletAddress = address.toLowerCase();
+  [
+    `${legacySaveKey}:wallet:${walletAddress}`,
+    legacySaveKey,
+  ].forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch {}
+  });
+}
+
 function mergeProgressStates(...states) {
   const validStates = states.filter((item) => item && typeof item === "object");
   if (!validStates.length) return null;
@@ -2184,7 +2225,7 @@ function mergeProgressStates(...states) {
     merged.onchainAchievements = { ...(merged.onchainAchievements || {}), ...(next.onchainAchievements || {}) };
   });
 
-  return merged;
+  return restoreEconomyFromOwned(merged);
 }
 
 function mergeDailyQuest(currentQuest, nextQuest) {
@@ -2206,6 +2247,7 @@ function mergeDailyQuest(currentQuest, nextQuest) {
 }
 
 function hasMeaningfulProgress(currentState) {
+  if (!currentState || typeof currentState !== "object") return false;
   return (
     currentState.totalClicks > 0 ||
     currentState.totalEarned > 0 ||
