@@ -3088,10 +3088,15 @@ async function downloadShareCard() {
 
   try {
     const canvas = await renderShareCardCanvas();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not render share card.");
     const link = document.createElement("a");
     link.download = `ritual-clicker-${getShareHandle()}.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   } finally {
     nodes.downloadShareButton.disabled = false;
     nodes.downloadShareButton.textContent = "Download Card";
@@ -3124,7 +3129,12 @@ async function renderShareCardCanvas() {
   const aura = levelAuras[level.title] || levelAuras.Bitty;
   const handle = getShareHandle();
   const avatar = await loadImage(getShareAvatarSource(handle));
-  const sigil = await loadImage("assets/ritual-sigil.jpg");
+  let sigil = null;
+  try {
+    sigil = await loadImage(nodes.sigilButton.querySelector(".sigil-image")?.src || "assets/ritual-sigil.jpg");
+  } catch (error) {
+    sigil = null;
+  }
   const unlocked = achievements.filter((achievement) => state.achievements[achievement.id]).length;
 
   context.fillStyle = "#000000";
@@ -3141,11 +3151,13 @@ async function renderShareCardCanvas() {
   context.fillStyle = lowerGlow;
   context.fillRect(0, 0, width, height);
 
-  context.save();
-  context.globalAlpha = 0.1;
-  context.filter = "grayscale(1) contrast(1.25)";
-  drawCircleImage(context, sigil, 824, -74, 380);
-  context.restore();
+  if (sigil) {
+    context.save();
+    context.globalAlpha = 0.1;
+    context.filter = "grayscale(1) contrast(1.25)";
+    drawCircleImage(context, sigil, 824, -74, 380);
+    context.restore();
+  }
 
   drawRoundedRect(context, 34, 34, width - 68, height - 68, 18, "rgba(0, 0, 0, 0)", aura.aura);
 
@@ -3208,6 +3220,7 @@ async function renderShareCardCanvas() {
 function loadImage(source) {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    image.crossOrigin = "anonymous";
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = source;
