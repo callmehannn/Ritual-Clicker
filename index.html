@@ -2733,7 +2733,22 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
     remoteState = normalizeState(currentRows?.[0]?.progress);
   }
 
-  const progress = mergeProgressStates(remoteState, createPortableState()) || createPortableState();
+  const portableState = createPortableState();
+  if (remoteState && hasMeaningfulProgress(remoteState) && !hasMeaningfulProgress(portableState)) {
+    restoreRemoteProgress(remoteState);
+    if (!silent) nodes.accountStatus.textContent = `Restored: ${format(remoteState.essence)} essence`;
+    render();
+    return false;
+  }
+
+  if (remoteState && shouldKeepRemoteProgress(remoteState, portableState)) {
+    restoreRemoteProgress(remoteState);
+    if (!silent) nodes.accountStatus.textContent = `Restored: ${format(remoteState.essence)} essence`;
+    render();
+    return false;
+  }
+
+  const progress = mergeProgressStates(remoteState, portableState) || portableState;
   if (progress) {
     const account = state.account;
     Object.assign(state, {
@@ -2766,6 +2781,49 @@ async function saveCloudState({ force = false, skipRemoteCheck = false, silent =
 async function flushCloudSave() {
   if (!cloudSession?.user?.id || !state.account?.address) return false;
   return saveCloudState({ force: true });
+}
+
+function restoreRemoteProgress(remoteState) {
+  const account = state.account;
+  const currentRitualStatus = state.ritualTestnetConnected;
+  Object.assign(state, {
+    ...remoteState,
+    account,
+    ritualTestnetConnected: currentRitualStatus || remoteState.ritualTestnetConnected,
+  });
+}
+
+function shouldKeepRemoteProgress(remoteState, localState) {
+  if (!hasMeaningfulProgress(remoteState) || !hasMeaningfulProgress(localState)) return false;
+
+  const remoteScore = getProgressScore(remoteState);
+  const localScore = getProgressScore(localState);
+  const remoteOwned = getOwnedCount(remoteState);
+  const localOwned = getOwnedCount(localState);
+  const remoteUpdatedAt = remoteState.progressUpdatedAt || 0;
+  const localUpdatedAt = localState.progressUpdatedAt || 0;
+
+  if (localScore.totalEarned < remoteScore.totalEarned && localOwned <= remoteOwned && localScore.totalClicks <= remoteScore.totalClicks) {
+    return true;
+  }
+
+  if (localUpdatedAt < remoteUpdatedAt && localScore.totalEarned <= remoteScore.totalEarned && localOwned <= remoteOwned) {
+    return true;
+  }
+
+  return false;
+}
+
+function getProgressScore(progressState) {
+  return {
+    essence: Number(progressState?.essence) || 0,
+    totalEarned: Number(progressState?.totalEarned) || 0,
+    totalClicks: Number(progressState?.totalClicks) || 0,
+  };
+}
+
+function getOwnedCount(progressState) {
+  return Object.values(progressState?.owned || {}).reduce((sum, count) => sum + (Number(count) || 0), 0);
 }
 
 async function loadCloudLeaderboard() {
