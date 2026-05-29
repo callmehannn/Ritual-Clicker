@@ -69,8 +69,7 @@ button {
 }
 
 .ritual-stage,
-.shop-panel,
-.login-panel {
+.shop-panel {
   border: 1px solid var(--line);
   background: rgba(2, 4, 4, 0.9);
   box-shadow: 0 20px 60px var(--shadow);
@@ -466,23 +465,50 @@ h2 {
 .panel-heading,
 .login-panel {
   display: grid;
-  gap: 6px;
+  gap: 10px;
 }
 
 .login-panel {
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(2, 4, 4, 0.78);
-  box-shadow:
-    inset 0 0 20px rgba(64, 255, 175, 0.05),
-    0 0 24px rgba(64, 255, 175, 0.06);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.account-header {
+  display: grid;
+  gap: 3px;
+}
+
+.account-block {
+  padding-top: 10px;
+  border-top: 1px solid rgba(64, 255, 175, 0.14);
 }
 
 .login-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 8px;
+}
+
+.wallet-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.identity-block {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.identity-fields {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
 
 .username-form {
@@ -523,6 +549,53 @@ h2 {
 
 .username-save {
   min-width: 70px;
+}
+
+.profile-preview,
+.leader-avatar {
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(64, 255, 175, 0.42), rgba(7, 115, 69, 0.2) 54%, rgba(0, 0, 0, 0.72)),
+    rgba(0, 0, 0, 0.72);
+  background-position: center;
+  background-size: cover;
+  color: var(--ink);
+  font-weight: 900;
+  box-shadow: 0 0 20px rgba(64, 255, 175, 0.16);
+}
+
+.profile-preview {
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(64, 255, 175, 0.44);
+  font-size: 1.1rem;
+}
+
+.profile-upload {
+  min-width: 0;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(64, 255, 175, 0.36);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(7, 115, 69, 0.18);
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.profile-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .login-panel p {
@@ -584,10 +657,6 @@ h2 {
   color: #02120b;
   background: var(--bright);
   font-size: 0.8rem;
-}
-
-.ritual-network-button span {
-  background: transparent;
 }
 
 .ritual-mark {
@@ -915,12 +984,20 @@ h2 {
 }
 
 .leaderboard li {
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px 34px minmax(0, 1fr) auto;
 }
 
 .leaderboard li.is-player {
   border-color: rgba(64, 255, 175, 0.5);
   background: rgba(7, 115, 69, 0.24);
+}
+
+.leader-avatar {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(64, 255, 175, 0.34);
+  color: #03110b;
+  font-size: 0.82rem;
 }
 
 .leader-name {
@@ -1059,15 +1136,21 @@ h2 {
   cursor: not-allowed;
 }
 
-.leaderboard > .share-button,
-.leaderboard > .submit-score-button {
+.leaderboard-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.leaderboard-actions > .share-button,
+.leaderboard-actions > .submit-score-button {
   width: 100%;
   min-height: 46px;
   border-radius: 8px;
   letter-spacing: 0;
 }
 
-.leaderboard > .share-button {
+.leaderboard-actions > .share-button {
   border: 1px solid rgba(64, 255, 175, 0.78);
   color: #02120b;
   background: linear-gradient(135deg, var(--bright), #20d68c 54%, var(--deep));
@@ -1077,7 +1160,7 @@ h2 {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
-.leaderboard > .submit-score-button {
+.leaderboard-actions > .submit-score-button {
   border: 1px solid rgba(64, 255, 175, 0.58);
   color: var(--ink);
   background:
@@ -1302,8 +1385,7 @@ h2 {
 }
 
 .ritual-stage,
-.shop-panel,
-.login-panel {
+.shop-panel {
   background: rgba(0, 0, 0, 0.34);
 }
 
@@ -1337,9 +1419,9 @@ h2 {
 }
 
 .login-panel {
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 .upgrade-card,
@@ -1651,6 +1733,10 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .leaderboard-actions {
+    grid-template-columns: 1fr;
+  }
+
   .game-shell {
     grid-template-columns: 1fr;
     width: min(100vw - 20px, 620px);
@@ -1788,5 +1874,9 @@ h2 {
 
   .login-actions {
     grid-template-columns: auto 1fr;
+  }
+
+  .wallet-actions {
+    grid-template-columns: 1fr;
   }
 }

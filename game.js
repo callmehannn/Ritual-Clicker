@@ -200,9 +200,10 @@ const nodes = {
   accountStatus: document.querySelector("#accountStatus"),
   accountUsername: document.querySelector("#accountUsername"),
   saveUsernameButton: document.querySelector("#saveUsernameButton"),
+  accountAvatarPreview: document.querySelector("#accountAvatarPreview"),
+  accountAvatarInput: document.querySelector("#accountAvatarInput"),
   xLoginButton: document.querySelector("#xLoginButton"),
   metaMaskButton: document.querySelector("#metaMaskButton"),
-  ritualTestnetButton: document.querySelector("#ritualTestnetButton"),
   logoutButton: document.querySelector("#logoutButton"),
   dailyStatus: document.querySelector("#dailyStatus"),
   dailyMonth: document.querySelector("#dailyMonth"),
@@ -388,8 +389,6 @@ if (nodes.xLoginButton) {
 
 nodes.metaMaskButton.addEventListener("click", () => connectWallet({ mode: "metamask" }));
 
-nodes.ritualTestnetButton.addEventListener("click", () => connectWallet({ mode: "ritual" }));
-
 nodes.logoutButton.addEventListener("click", async () => {
   nodes.accountStatus.textContent = "Saving progress...";
   await flushCloudSave();
@@ -442,6 +441,7 @@ window.addEventListener("pagehide", () => {
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 nodes.dailyQuestClaimButton.addEventListener("click", claimDailyQuestReward);
 nodes.saveUsernameButton.addEventListener("click", saveUsername);
+nodes.accountAvatarInput.addEventListener("change", handleAccountAvatarUpload);
 nodes.leaderboardPrevButton.addEventListener("click", () => {
   leaderboardPage = Math.max(0, leaderboardPage - 1);
   renderLeaderboard();
@@ -582,12 +582,13 @@ function renderAccount() {
     nodes.accountUsername.value = state.playerName || "";
   }
   nodes.saveUsernameButton.disabled = !state.account;
+  nodes.accountAvatarInput.disabled = !state.account;
+  renderAccountAvatar();
 
   if (!state.account) {
     nodes.accountStatus.textContent = "Not connected";
     if (nodes.xLoginButton) nodes.xLoginButton.hidden = false;
     nodes.metaMaskButton.hidden = false;
-    nodes.ritualTestnetButton.hidden = false;
     nodes.logoutButton.hidden = true;
     return;
   }
@@ -596,8 +597,23 @@ function renderAccount() {
   nodes.accountStatus.textContent = cloudSession ? `Wallet synced: ${state.account.label}` : `${provider}: ${state.account.label}`;
   if (nodes.xLoginButton) nodes.xLoginButton.hidden = true;
   nodes.metaMaskButton.hidden = true;
-  nodes.ritualTestnetButton.hidden = true;
   nodes.logoutButton.hidden = false;
+}
+
+function renderAccountAvatar() {
+  const preview = nodes.accountAvatarPreview;
+  if (!preview) return;
+
+  const avatar = getSafeAvatar(state.profileAvatar);
+  if (avatar) {
+    preview.style.backgroundImage = `url("${avatar}")`;
+    preview.textContent = "";
+    return;
+  }
+
+  const name = cleanUsername(state.playerName) || state.account?.label || "R";
+  preview.style.backgroundImage = "";
+  preview.textContent = getAvatarInitial(name);
 }
 
 function saveUsername() {
@@ -614,6 +630,65 @@ function saveUsername() {
   loadCloudLeaderboard();
   nodes.accountStatus.textContent = name ? `Username saved: ${name}` : "Username cleared.";
   renderLeaderboard();
+}
+
+async function handleAccountAvatarUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!state.account) {
+    nodes.accountStatus.textContent = "Connect wallet before setting profile picture.";
+    event.target.value = "";
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    nodes.accountStatus.textContent = "Upload an image file for your profile picture.";
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    nodes.accountStatus.textContent = "Saving profile picture...";
+    state.profileAvatar = await resizeAvatarFile(file);
+    touchProgress();
+    saveState();
+    loadCloudLeaderboard();
+    renderAccountAvatar();
+    nodes.accountStatus.textContent = "Profile picture saved.";
+  } catch (error) {
+    console.warn("Profile picture upload failed", error);
+    nodes.accountStatus.textContent = "Could not save profile picture.";
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function resizeAvatarFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.addEventListener("load", () => {
+      const image = new Image();
+      image.onload = () => {
+        const size = 160;
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        const sourceSize = Math.min(image.width, image.height);
+        const sourceX = (image.width - sourceSize) / 2;
+        const sourceY = (image.height - sourceSize) / 2;
+        canvas.width = size;
+        canvas.height = size;
+        context.fillStyle = "#020705";
+        context.fillRect(0, 0, size, size);
+        context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/webp", 0.76));
+      };
+      image.onerror = reject;
+      image.src = String(reader.result || "");
+    });
+    reader.readAsDataURL(file);
+  });
 }
 
 function cleanUsername(value) {
@@ -776,7 +851,6 @@ function attachWalletAccount(address, mode) {
 
 function setWalletBusy(isBusy, label = "") {
   nodes.metaMaskButton.disabled = isBusy;
-  nodes.ritualTestnetButton.disabled = isBusy;
   if (label) nodes.accountStatus.textContent = label;
 }
 
@@ -1032,6 +1106,7 @@ async function loadCloudLeaderboard() {
         return {
           address: row.wallet_address,
           name: getLeaderboardName(row.wallet_address, progress),
+          avatar: getSafeAvatar(progress.profileAvatar),
           score: Number(progress.totalEarned || 0),
           updatedAt: row.updated_at,
         };
@@ -1054,6 +1129,7 @@ function getLocalLeaderboardFallback() {
     {
       address: state.account.address,
       name: getCurrentPlayer(),
+      avatar: getSafeAvatar(state.profileAvatar),
       score: state.totalEarned,
     },
   ];
@@ -1069,6 +1145,7 @@ function mergeCurrentPlayerIntoLeaderboard(entries) {
     {
       address: state.account.address,
       name: getCurrentPlayer(),
+      avatar: getSafeAvatar(state.profileAvatar),
       score: state.totalEarned,
     },
   ]
@@ -1524,6 +1601,7 @@ function renderLeaderboard() {
     .map(
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
+          <span class="leader-avatar" style="${getAvatarStyle(entry.avatar)}">${entry.avatar ? "" : getAvatarInitial(entry.name)}</span>
           <span class="leader-name">${formatLeaderboardName(entry.name)}</span>
           <strong>${formatEssence(entry.score)}</strong>
         </li>
@@ -1558,6 +1636,20 @@ function formatLeaderboardName(name) {
   const [player, ...rankParts] = String(name || "").split(" · ");
   const rank = rankParts.join(" · ");
   return rank ? `<b>${player}</b><em>${rank}</em>` : `<b>${player}</b>`;
+}
+
+function getSafeAvatar(value) {
+  const avatar = String(value || "");
+  return avatar.startsWith("data:image/") ? avatar : "";
+}
+
+function getAvatarStyle(avatar) {
+  const safeAvatar = getSafeAvatar(avatar);
+  return safeAvatar ? `background-image: url("${safeAvatar}")` : "";
+}
+
+function getAvatarInitial(name) {
+  return (String(name || "R").trim().replace(/^@/, "")[0] || "R").toUpperCase();
 }
 
 function openShareModal() {
@@ -1607,6 +1699,7 @@ function getShareHandle() {
 
 function getShareAvatarSource(handle) {
   if (shareAvatarDataUrl) return shareAvatarDataUrl;
+  if (getSafeAvatar(state.profileAvatar)) return state.profileAvatar;
   if (shareXAvatarDataUrl) return shareXAvatarDataUrl;
   const initial = (handle[0] || "R").toUpperCase();
   const svg = `
@@ -2184,6 +2277,7 @@ function defaultState() {
     invokeBonus: 1,
     account: null,
     playerName: "",
+    profileAvatar: "",
     owned: {},
     milestones: [],
     achievements: {},
@@ -2225,6 +2319,7 @@ function normalizeState(saved) {
     ...base,
     ...saved,
     playerName: cleanUsername(saved.playerName),
+    profileAvatar: getSafeAvatar(saved.profileAvatar),
     owned: normalizeOwned(saved.owned),
     achievements: { ...base.achievements, ...saved.achievements },
     onchainAchievements: { ...base.onchainAchievements, ...saved.onchainAchievements },
