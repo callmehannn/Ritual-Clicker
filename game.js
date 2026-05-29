@@ -198,6 +198,8 @@ const nodes = {
   resetButton: document.querySelector("#resetButton"),
   accountOptions: document.querySelector("#accountOptions"),
   accountStatus: document.querySelector("#accountStatus"),
+  accountUsername: document.querySelector("#accountUsername"),
+  saveUsernameButton: document.querySelector("#saveUsernameButton"),
   xLoginButton: document.querySelector("#xLoginButton"),
   metaMaskButton: document.querySelector("#metaMaskButton"),
   ritualTestnetButton: document.querySelector("#ritualTestnetButton"),
@@ -426,6 +428,7 @@ window.addEventListener("pagehide", () => {
 
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 nodes.dailyQuestClaimButton.addEventListener("click", claimDailyQuestReward);
+nodes.saveUsernameButton.addEventListener("click", saveUsername);
 nodes.leaderboardPrevButton.addEventListener("click", () => {
   leaderboardPage = Math.max(0, leaderboardPage - 1);
   renderLeaderboard();
@@ -562,6 +565,11 @@ function getBoostSecondsLeft() {
 }
 
 function renderAccount() {
+  if (document.activeElement !== nodes.accountUsername) {
+    nodes.accountUsername.value = state.playerName || "";
+  }
+  nodes.saveUsernameButton.disabled = !state.account;
+
   if (!state.account) {
     nodes.accountStatus.textContent = "Not connected";
     if (nodes.xLoginButton) nodes.xLoginButton.hidden = false;
@@ -577,6 +585,30 @@ function renderAccount() {
   nodes.metaMaskButton.hidden = true;
   nodes.ritualTestnetButton.hidden = true;
   nodes.logoutButton.hidden = false;
+}
+
+function saveUsername() {
+  if (!state.account) {
+    nodes.accountStatus.textContent = "Connect wallet before setting username.";
+    return;
+  }
+
+  const name = cleanUsername(nodes.accountUsername.value);
+  state.playerName = name;
+  nodes.accountUsername.value = name;
+  touchProgress();
+  saveState();
+  loadCloudLeaderboard();
+  nodes.accountStatus.textContent = name ? `Username saved: ${name}` : "Username cleared.";
+  renderLeaderboard();
+}
+
+function cleanUsername(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^@/, "")
+    .replace(/[^a-zA-Z0-9_]/g, "")
+    .slice(0, 18);
 }
 
 async function connectWallet({ mode }) {
@@ -986,7 +1018,7 @@ async function loadCloudLeaderboard() {
         if (!progress || !row.wallet_address) return null;
         return {
           address: row.wallet_address,
-          name: `${shortenAddress(row.wallet_address)} · ${getLevelForClicks(progress.totalClicks || 0).title}`,
+          name: getLeaderboardName(row.wallet_address, progress),
           score: Number(progress.totalEarned || 0),
           updatedAt: row.updated_at,
         };
@@ -1915,8 +1947,13 @@ function getAchievementIcon(index, unlocked) {
 }
 
 function getCurrentPlayer() {
-  const name = state.account ? state.account.label : "Anonymous";
+  const name = state.playerName || (state.account ? state.account.label : "Anonymous");
   return `${name} · ${getCurrentLevel().title}`;
+}
+
+function getLeaderboardName(address, progress) {
+  const name = cleanUsername(progress?.playerName) || shortenAddress(address);
+  return `${name} · ${getLevelForClicks(progress?.totalClicks || 0).title}`;
 }
 
 function getLevelForClicks(clicks) {
@@ -2117,6 +2154,7 @@ function defaultState() {
     multiplierEndsAt: 0,
     invokeBonus: 1,
     account: null,
+    playerName: "",
     owned: {},
     milestones: [],
     achievements: {},
@@ -2157,6 +2195,7 @@ function normalizeState(saved) {
   const normalized = {
     ...base,
     ...saved,
+    playerName: cleanUsername(saved.playerName),
     owned: normalizeOwned(saved.owned),
     achievements: { ...base.achievements, ...saved.achievements },
     onchainAchievements: { ...base.onchainAchievements, ...saved.onchainAchievements },
