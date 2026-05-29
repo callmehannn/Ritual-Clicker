@@ -221,6 +221,7 @@ const nodes = {
   statusText: document.querySelector("#statusText"),
   achievementsList: document.querySelector("#achievementsList"),
   achievementCount: document.querySelector("#achievementCount"),
+  achievementBonusInfo: document.querySelector("#achievementBonusInfo"),
   leaderboardList: document.querySelector("#leaderboardList"),
   leaderboardPlayerRank: document.querySelector("#leaderboardPlayerRank"),
   leaderboardPrevButton: document.querySelector("#leaderboardPrev"),
@@ -265,7 +266,7 @@ nodes.sigilButton.addEventListener("click", (event) => {
   const combo = updateCombo();
   const comboMultiplier = getComboMultiplier(combo);
   const isCrit = Math.random() < critChance;
-  const gain = Math.ceil(state.perClick * state.multiplier * comboMultiplier * (isCrit ? critMultiplier : 1));
+  const gain = applyAchievementBoost(state.perClick * state.multiplier * comboMultiplier * (isCrit ? critMultiplier : 1));
   state.totalClicks += 1;
   state.essence += gain;
   state.totalEarned += gain;
@@ -286,7 +287,7 @@ nodes.invokeButton.addEventListener("click", invokeRite);
 
 async function invokeRite() {
   if (state.focus < 100) return;
-  const reward = Math.ceil((state.perClick * 25 + state.perSecond * 12 + 75) * state.invokeBonus);
+  const reward = applyAchievementBoost((state.perClick * 25 + state.perSecond * 12 + 75) * state.invokeBonus);
 
   if (ritualInvocationContractAddress) {
     await invokeRiteOnchain(reward);
@@ -344,6 +345,18 @@ function completeInvokeReward(reward) {
   state.multiplierEndsAt = Date.now() + 30000;
   updateDailyQuestProgress("boost", { amount: 1 });
   touchProgress();
+}
+
+function applyAchievementBoost(value) {
+  return Math.ceil(value * getAchievementBoostMultiplier());
+}
+
+function getAchievementBoostMultiplier() {
+  return 1 + Math.min(20, getClaimedAchievementCount()) / 100;
+}
+
+function getClaimedAchievementCount() {
+  return Object.keys(state.onchainAchievements || {}).filter((id) => state.onchainAchievements[id]).length;
 }
 
 if (nodes.resetButton) {
@@ -471,7 +484,7 @@ function tick() {
     state.multiplierEndsAt = 0;
   }
 
-  const gain = Math.ceil(state.perSecond * state.multiplier);
+  const gain = applyAchievementBoost(state.perSecond * state.multiplier);
   if (gain > 0) {
     state.essence += gain;
     state.totalEarned += gain;
@@ -1511,7 +1524,7 @@ function renderLeaderboard() {
     .map(
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
-          <span class="leader-name">${entry.name}</span>
+          <span class="leader-name">${formatLeaderboardName(entry.name)}</span>
           <strong>${formatEssence(entry.score)}</strong>
         </li>
       `,
@@ -1539,6 +1552,12 @@ function renderLeaderboard() {
 
 function getLeaderboardMaxPage() {
   return Math.max(0, Math.ceil(cloudLeaderboard.length / leaderboardPageSize) - 1);
+}
+
+function formatLeaderboardName(name) {
+  const [player, ...rankParts] = String(name || "").split(" · ");
+  const rank = rankParts.join(" · ");
+  return rank ? `<b>${player}</b><em>${rank}</em>` : `<b>${player}</b>`;
 }
 
 function openShareModal() {
@@ -1692,8 +1711,8 @@ async function renderShareCardCanvas() {
   context.stroke();
 
   context.fillStyle = "#b9ffe1";
-  context.font = "900 92px Georgia, serif";
-  context.fillText(level.title, 286, 145);
+  context.font = "900 82px Arial, sans-serif";
+  context.fillText(level.title.toUpperCase(), 286, 145);
   context.font = "800 34px Arial, sans-serif";
   context.fillStyle = "#9ee8c5";
   context.fillText(`@${handle}`, 292, 198);
@@ -1826,7 +1845,10 @@ function checkAchievements() {
 
 function renderAchievements() {
   const unlockedCount = achievements.filter((achievement) => state.achievements[achievement.id]).length;
+  const claimedCount = getClaimedAchievementCount();
+  const bonusPercent = Math.min(20, claimedCount);
   nodes.achievementCount.textContent = `${unlockedCount}/${achievements.length}`;
+  nodes.achievementBonusInfo.textContent = `Claimed achievements: +${bonusPercent}% all essence gain (max +20%).`;
   nodes.achievementsList.innerHTML = achievements
     .map((achievement, index) => {
       const unlocked = Boolean(state.achievements[achievement.id]);
@@ -1947,13 +1969,20 @@ function getAchievementIcon(index, unlocked) {
 }
 
 function getCurrentPlayer() {
-  const name = state.playerName || (state.account ? state.account.label : "Anonymous");
+  const savedName = cleanUsername(state.playerName);
+  const name = savedName && !isGenericWeb3Name(savedName) ? savedName : state.account ? state.account.label : "Anonymous";
   return `${name} · ${getCurrentLevel().title}`;
 }
 
 function getLeaderboardName(address, progress) {
-  const name = cleanUsername(progress?.playerName) || shortenAddress(address);
+  const savedName = cleanUsername(progress?.playerName);
+  const name = savedName && !isGenericWeb3Name(savedName) ? savedName : shortenAddress(address);
   return `${name} · ${getLevelForClicks(progress?.totalClicks || 0).title}`;
+}
+
+function isGenericWeb3Name(name) {
+  const value = String(name || "").toLowerCase();
+  return value === "web3" || value === "wallet" || value === "ethereum" || value.startsWith("web3");
 }
 
 function getLevelForClicks(clicks) {

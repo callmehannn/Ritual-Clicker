@@ -851,6 +851,13 @@ h2 {
   font-size: 0.76rem;
 }
 
+.achievement-bonus-info {
+  margin: -2px 0 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .achievements li.is-onchain {
   border-color: rgba(64, 255, 175, 0.62);
   box-shadow:
@@ -917,9 +924,28 @@ h2 {
 }
 
 .leader-name {
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.leader-name b,
+.leader-name em {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.leader-name b {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.leader-name em {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
 }
 
 .leaderboard strong {
@@ -1496,9 +1522,10 @@ h2 {
 .share-card h3 {
   margin: 0;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: inherit;
   font-size: clamp(2rem, 7vw, 4.2rem);
   line-height: 0.88;
+  text-transform: uppercase;
 }
 
 .share-card p {
