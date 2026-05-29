@@ -38,6 +38,8 @@ let cloudSaveTimer = null;
 let isLoadingCloudState = false;
 let walletConnectProvider = null;
 let cloudLeaderboard = [];
+let leaderboardPage = 0;
+const leaderboardPageSize = 10;
 let shareAvatarDataUrl = "";
 let shareXAvatarDataUrl = "";
 let shareXProfileHandle = "";
@@ -219,6 +221,9 @@ const nodes = {
   achievementCount: document.querySelector("#achievementCount"),
   leaderboardList: document.querySelector("#leaderboardList"),
   leaderboardPlayerRank: document.querySelector("#leaderboardPlayerRank"),
+  leaderboardPrevButton: document.querySelector("#leaderboardPrev"),
+  leaderboardNextButton: document.querySelector("#leaderboardNext"),
+  leaderboardPageText: document.querySelector("#leaderboardPageText"),
   playerRank: document.querySelector("#playerRank"),
   submitScoreButton: document.querySelector("#submitScoreButton"),
   submitScoreStatus: document.querySelector("#submitScoreStatus"),
@@ -334,7 +339,7 @@ function completeInvokeReward(reward) {
   state.totalEarned += reward;
   state.focus = 0;
   state.multiplier = 2;
-  state.multiplierEndsAt = Date.now() + 15000;
+  state.multiplierEndsAt = Date.now() + 30000;
   updateDailyQuestProgress("boost", { amount: 1 });
   touchProgress();
 }
@@ -419,18 +424,17 @@ window.addEventListener("pagehide", () => {
   flushCloudSave();
 });
 
-window.addEventListener("pagehide", () => {
-  flushCloudSave();
-});
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") {
-    flushCloudSave();
-  }
-});
-
 nodes.dailyClaimButton.addEventListener("click", claimDailyReward);
 nodes.dailyQuestClaimButton.addEventListener("click", claimDailyQuestReward);
+nodes.leaderboardPrevButton.addEventListener("click", () => {
+  leaderboardPage = Math.max(0, leaderboardPage - 1);
+  renderLeaderboard();
+});
+nodes.leaderboardNextButton.addEventListener("click", () => {
+  const maxPage = getLeaderboardMaxPage();
+  leaderboardPage = Math.min(maxPage, leaderboardPage + 1);
+  renderLeaderboard();
+});
 
 nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 nodes.shareButton.addEventListener("click", openShareModal);
@@ -759,6 +763,10 @@ async function initializeCloudSession() {
 
     const address = getSessionWalletAddress(cloudSession) || state.account?.address;
     if (!address) return;
+    const currentAddress = state.account?.address?.toLowerCase();
+    if (currentAddress && currentAddress !== address.toLowerCase()) {
+      Object.assign(state, loadLocalStateForWallet(address) || defaultState());
+    }
 
     attachWalletAccount(address, state.account?.type || "metamask");
     await syncCloudProgress(address, state.account?.type || "metamask");
@@ -825,7 +833,7 @@ function shouldUseRemoteState(remoteState, localState) {
 
 async function saveCloudState({ force = false, skipRemoteCheck = false, silent = false } = {}) {
   if (!supabaseClient || !cloudSession?.user?.id || !state.account?.address) return false;
-  if (isLoadingCloudState && !force) return false;
+  if (isLoadingCloudState) return false;
 
   if (!force) {
     clearTimeout(cloudSaveTimer);
@@ -930,6 +938,14 @@ function shouldKeepRemoteProgress(remoteState, localState) {
     return true;
   }
 
+  if (localOwned < remoteOwned) {
+    return true;
+  }
+
+  if (localScore.essence < remoteScore.essence && localOwned <= remoteOwned && localScore.totalEarned <= remoteScore.totalEarned) {
+    return true;
+  }
+
   if (localUpdatedAt < remoteUpdatedAt && localScore.totalEarned <= remoteScore.totalEarned && localOwned <= remoteOwned) {
     return true;
   }
@@ -976,8 +992,7 @@ async function loadCloudLeaderboard() {
         };
       })
       .filter((entry) => entry && entry.score > 0)
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 10);
+      .sort((left, right) => right.score - left.score);
 
     cloudLeaderboard = mergeCurrentPlayerIntoLeaderboard(cloudLeaderboard);
     renderLeaderboard();
@@ -1012,8 +1027,7 @@ function mergeCurrentPlayerIntoLeaderboard(entries) {
       score: state.totalEarned,
     },
   ]
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 10);
+    .sort((left, right) => right.score - left.score);
 }
 
 function createPortableState() {
@@ -1448,16 +1462,20 @@ function isUnknownChainError(error) {
 
 function renderLeaderboard() {
   const leaderboard = cloudLeaderboard;
-  const topLeaders = leaderboard.slice(0, 10);
+  const maxPage = getLeaderboardMaxPage();
+  leaderboardPage = Math.min(Math.max(0, leaderboardPage), maxPage);
+  const startIndex = leaderboardPage * leaderboardPageSize;
+  const pageLeaders = leaderboard.slice(startIndex, startIndex + leaderboardPageSize);
   const currentAddress = state.account?.address?.toLowerCase();
   const playerIndex = currentAddress
     ? leaderboard.findIndex((entry) => entry.address?.toLowerCase() === currentAddress)
     : -1;
   const playerEntry = playerIndex >= 0 ? leaderboard[playerIndex] : null;
-  const showPlayerRank = Boolean(playerEntry && playerIndex >= 10);
+  const showPlayerRank = Boolean(playerEntry && (playerIndex < startIndex || playerIndex >= startIndex + leaderboardPageSize));
 
   nodes.playerRank.textContent = playerIndex >= 0 ? `Rank #${playerIndex + 1}` : `${leaderboard.length} players`;
-  nodes.leaderboardList.innerHTML = topLeaders
+  nodes.leaderboardList.style.counterReset = `leaderboard ${startIndex}`;
+  nodes.leaderboardList.innerHTML = pageLeaders
     .map(
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
@@ -1471,6 +1489,11 @@ function renderLeaderboard() {
   nodes.leaderboardPlayerRank.innerHTML = showPlayerRank
     ? `<span>Your rank #${playerIndex + 1}</span><strong>${formatEssence(playerEntry.score)}</strong>`
     : "";
+  nodes.leaderboardPrevButton.disabled = leaderboardPage <= 0;
+  nodes.leaderboardNextButton.disabled = leaderboardPage >= maxPage;
+  nodes.leaderboardPageText.textContent = leaderboard.length
+    ? `Page ${leaderboardPage + 1} / ${maxPage + 1}`
+    : "No players yet";
   nodes.submitScoreButton.disabled = state.totalEarned <= 0;
   nodes.submitScoreButton.textContent = ritualScoreContractAddress ? "Submit Score Onchain" : "Deploy Score Contract First";
   if (!ritualScoreContractAddress) {
@@ -1480,6 +1503,10 @@ function renderLeaderboard() {
   } else {
     nodes.submitScoreStatus.textContent = `Ready to submit ${formatEssence(state.totalEarned)} total essence.`;
   }
+}
+
+function getLeaderboardMaxPage() {
+  return Math.max(0, Math.ceil(cloudLeaderboard.length / leaderboardPageSize) - 1);
 }
 
 function openShareModal() {
@@ -2113,6 +2140,16 @@ function loadState() {
   return defaultState();
 }
 
+function loadLocalStateForWallet(address) {
+  if (!address) return null;
+  try {
+    const saved = normalizeState(JSON.parse(localStorage.getItem(`${localSaveKey}:wallet:${address.toLowerCase()}`)));
+    return saved && hasMeaningfulProgress(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeState(saved) {
   const base = defaultState();
   if (!saved || typeof saved !== "object") return null;
@@ -2247,18 +2284,11 @@ function mergeProgressStates(...states) {
   if (!validStates.length) return null;
 
   const normalizedStates = validStates.map((item) => normalizeState(item)).filter(Boolean);
-  const spendState = normalizedStates.reduce((latest, item) => {
-    const latestStamp = latest.progressUpdatedAt || 0;
-    const itemStamp = item.progressUpdatedAt || 0;
-    if (itemStamp !== latestStamp) return itemStamp > latestStamp ? item : latest;
-    const latestOwned = Object.values(latest.owned || {}).reduce((sum, count) => sum + count, 0);
-    const itemOwned = Object.values(item.owned || {}).reduce((sum, count) => sum + count, 0);
-    if (itemOwned !== latestOwned) return itemOwned > latestOwned ? item : latest;
-    return (item.totalEarned || 0) >= (latest.totalEarned || 0) ? item : latest;
-  }, normalizedStates[0]);
+  const spendState = chooseSpendState(normalizedStates);
 
   const merged = normalizeState(spendState);
   normalizedStates.forEach((next) => {
+    mergeOwned(merged, next);
     merged.totalEarned = Math.max(merged.totalEarned || 0, next.totalEarned || 0);
     merged.totalClicks = Math.max(merged.totalClicks || 0, next.totalClicks || 0);
     merged.focus = Math.max(merged.focus || 0, next.focus || 0);
@@ -2275,6 +2305,31 @@ function mergeProgressStates(...states) {
   });
 
   return restoreEconomyFromOwned(merged);
+}
+
+function chooseSpendState(states) {
+  return states.reduce((best, item) => {
+    const bestOwned = getOwnedCount(best);
+    const itemOwned = getOwnedCount(item);
+    if (itemOwned !== bestOwned) return itemOwned > bestOwned ? item : best;
+
+    const bestEssence = Number(best.essence) || 0;
+    const itemEssence = Number(item.essence) || 0;
+    if (itemEssence !== bestEssence) return itemEssence > bestEssence ? item : best;
+
+    const bestEarned = Number(best.totalEarned) || 0;
+    const itemEarned = Number(item.totalEarned) || 0;
+    if (itemEarned !== bestEarned) return itemEarned > bestEarned ? item : best;
+
+    return (item.progressUpdatedAt || 0) > (best.progressUpdatedAt || 0) ? item : best;
+  }, states[0]);
+}
+
+function mergeOwned(target, source) {
+  upgrades.forEach((upgrade) => {
+    const count = Math.max(Number(target.owned?.[upgrade.id]) || 0, Number(source.owned?.[upgrade.id]) || 0);
+    if (count > 0) target.owned[upgrade.id] = count;
+  });
 }
 
 function mergeDailyQuest(currentQuest, nextQuest) {
