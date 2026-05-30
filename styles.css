@@ -558,11 +558,10 @@ h2 {
   overflow: hidden;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 35% 30%, rgba(64, 255, 175, 0.42), rgba(7, 115, 69, 0.2) 54%, rgba(0, 0, 0, 0.72)),
-    rgba(0, 0, 0, 0.72);
+    radial-gradient(circle at 32% 26%, #eafff5 0 18%, #40ffaf 42%, #077345 72%, #02120b 100%);
   background-position: center;
   background-size: cover;
-  color: var(--ink);
+  color: #02120b;
   font-weight: 900;
   box-shadow: 0 0 20px rgba(64, 255, 175, 0.16);
 }
@@ -995,9 +994,19 @@ h2 {
 .leader-avatar {
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(64, 255, 175, 0.34);
-  color: #03110b;
-  font-size: 0.82rem;
+  border: 1px solid rgba(64, 255, 175, 0.62);
+  font-size: 0.88rem;
+  text-shadow: none;
+  box-shadow:
+    inset 0 0 10px rgba(255, 255, 255, 0.18),
+    0 0 18px rgba(64, 255, 175, 0.22);
+}
+
+.leader-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .leader-name {

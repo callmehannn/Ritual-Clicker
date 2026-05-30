@@ -682,7 +682,7 @@ function resizeAvatarFile(file) {
         context.fillStyle = "#020705";
         context.fillRect(0, 0, size, size);
         context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
-        resolve(canvas.toDataURL("image/webp", 0.76));
+        resolve(canvas.toDataURL("image/png"));
       };
       image.onerror = reject;
       image.src = String(reader.result || "");
@@ -1601,7 +1601,7 @@ function renderLeaderboard() {
     .map(
       (entry) => `
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
-          <span class="leader-avatar" style="${getAvatarStyle(entry.avatar)}">${entry.avatar ? "" : getAvatarInitial(entry.name)}</span>
+          <span class="leader-avatar">${renderLeaderboardAvatar(entry)}</span>
           <span class="leader-name">${formatLeaderboardName(entry.name)}</span>
           <strong>${formatEssence(entry.score)}</strong>
         </li>
@@ -1643,9 +1643,9 @@ function getSafeAvatar(value) {
   return avatar.startsWith("data:image/") ? avatar : "";
 }
 
-function getAvatarStyle(avatar) {
-  const safeAvatar = getSafeAvatar(avatar);
-  return safeAvatar ? `background-image: url("${safeAvatar}")` : "";
+function renderLeaderboardAvatar(entry) {
+  const avatar = getSafeAvatar(entry?.avatar);
+  return avatar ? `<img src="${avatar}" alt="">` : getAvatarInitial(entry?.name);
 }
 
 function getAvatarInitial(name) {
