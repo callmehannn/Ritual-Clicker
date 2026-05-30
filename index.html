@@ -828,6 +828,36 @@ h2 {
   font-weight: 800;
 }
 
+.leaderboard-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.leaderboard-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-right: 1px solid rgba(64, 255, 175, 0.16);
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.leaderboard-tabs button:last-child {
+  border-right: 0;
+}
+
+.leaderboard-tabs button.is-active {
+  color: #02120b;
+  background: linear-gradient(135deg, var(--bright), #1bd58c);
+}
+
 .leaderboard ol,
 .achievements ol {
   margin: 0;
@@ -2079,6 +2109,11 @@ h2 {
           <h2>Leaderboard</h2>
           <span id="playerRank">Rank #1</span>
         </div>
+        <div class="leaderboard-tabs" aria-label="Leaderboard period">
+          <button class="is-active" type="button" data-leaderboard-mode="all">All</button>
+          <button type="button" data-leaderboard-mode="weekly">Weekly</button>
+          <button type="button" data-leaderboard-mode="daily">Daily</button>
+        </div>
         <ol id="leaderboardList"></ol>
         <div class="leaderboard-pager" aria-label="Leaderboard pages">
           <button class="pager-button" id="leaderboardPrev" type="button">←</button>
@@ -2204,6 +2239,7 @@ let walletConnectProvider = null;
 let cloudLeaderboard = [];
 let leaderboardPage = 0;
 const leaderboardPageSize = 10;
+let leaderboardMode = "all";
 let shareAvatarDataUrl = "";
 let shareXAvatarDataUrl = "";
 let shareXProfileHandle = "";
@@ -2392,6 +2428,7 @@ const nodes = {
   leaderboardPrevButton: document.querySelector("#leaderboardPrev"),
   leaderboardNextButton: document.querySelector("#leaderboardNext"),
   leaderboardPageText: document.querySelector("#leaderboardPageText"),
+  leaderboardModeButtons: document.querySelectorAll("[data-leaderboard-mode]"),
   playerRank: document.querySelector("#playerRank"),
   submitScoreButton: document.querySelector("#submitScoreButton"),
   submitScoreStatus: document.querySelector("#submitScoreStatus"),
@@ -2435,6 +2472,7 @@ nodes.sigilButton.addEventListener("click", (event) => {
   state.totalClicks += 1;
   state.essence += gain;
   state.totalEarned += gain;
+  recordLeaderboardEarned(gain);
   state.focus = Math.min(100, state.focus + 3 + state.perClick * 0.05);
   updateDailyQuestProgress("click", { amount: 1 });
   updateDailyQuestProgress("earn", { amount: gain });
@@ -2505,6 +2543,7 @@ async function invokeRiteOnchain(reward) {
 function completeInvokeReward(reward) {
   state.essence += reward;
   state.totalEarned += reward;
+  recordLeaderboardEarned(reward);
   state.focus = 0;
   state.multiplier = 2;
   state.multiplierEndsAt = Date.now() + 30000;
@@ -2615,6 +2654,13 @@ nodes.leaderboardNextButton.addEventListener("click", () => {
   leaderboardPage = Math.min(maxPage, leaderboardPage + 1);
   renderLeaderboard();
 });
+nodes.leaderboardModeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    leaderboardMode = button.dataset.leaderboardMode || "all";
+    leaderboardPage = 0;
+    renderLeaderboard();
+  });
+});
 
 nodes.submitScoreButton.addEventListener("click", submitOnchainScore);
 nodes.shareButton.addEventListener("click", openShareModal);
@@ -2652,6 +2698,7 @@ function tick() {
   if (gain > 0) {
     state.essence += gain;
     state.totalEarned += gain;
+    recordLeaderboardEarned(gain);
     state.focus = Math.min(100, state.focus + 0.8 + state.perSecond * 0.01);
     updateDailyQuestProgress("earn", { amount: gain });
     touchProgress();
@@ -3244,6 +3291,15 @@ function getProgressScore(progressState) {
   };
 }
 
+function getLeaderboardPeriodScores(progressState) {
+  const periods = normalizeLeaderboardPeriods(progressState?.leaderboardPeriods);
+  return {
+    all: Number(progressState?.totalEarned || 0),
+    weekly: periods.weekly.key === getWeekKey() ? Number(periods.weekly.earned || 0) : 0,
+    daily: periods.daily.key === getDateKey() ? Number(periods.daily.earned || 0) : 0,
+  };
+}
+
 function getOwnedCount(progressState) {
   return Object.values(progressState?.owned || {}).reduce((sum, count) => sum + (Number(count) || 0), 0);
 }
@@ -3272,13 +3328,14 @@ async function loadCloudLeaderboard() {
           name: getLeaderboardName(row.wallet_address, progress),
           avatar: getSafeAvatar(progress.profileAvatar),
           score: Number(progress.totalEarned || 0),
+          scores: getLeaderboardPeriodScores(progress),
           updatedAt: row.updated_at,
         };
       })
-      .filter((entry) => entry && entry.score > 0)
-      .sort((left, right) => right.score - left.score);
+      .filter((entry) => entry && Math.max(entry.scores.all, entry.scores.weekly, entry.scores.daily) > 0);
 
     cloudLeaderboard = mergeCurrentPlayerIntoLeaderboard(cloudLeaderboard);
+    sortLeaderboard();
     renderLeaderboard();
   } catch (error) {
     console.warn("Leaderboard load failed", error);
@@ -3295,6 +3352,7 @@ function getLocalLeaderboardFallback() {
       name: getCurrentPlayer(),
       avatar: getSafeAvatar(state.profileAvatar),
       score: state.totalEarned,
+      scores: getLeaderboardPeriodScores(state),
     },
   ];
 }
@@ -3311,9 +3369,18 @@ function mergeCurrentPlayerIntoLeaderboard(entries) {
       name: getCurrentPlayer(),
       avatar: getSafeAvatar(state.profileAvatar),
       score: state.totalEarned,
+      scores: getLeaderboardPeriodScores(state),
     },
   ]
-    .sort((left, right) => right.score - left.score);
+    .filter((entry) => Math.max(entry.scores?.all || entry.score || 0, entry.scores?.weekly || 0, entry.scores?.daily || 0) > 0);
+}
+
+function sortLeaderboard() {
+  cloudLeaderboard = cloudLeaderboard.sort((left, right) => getLeaderboardEntryScore(right) - getLeaderboardEntryScore(left));
+}
+
+function getLeaderboardEntryScore(entry) {
+  return Number(entry?.scores?.[leaderboardMode] ?? entry?.score ?? 0);
 }
 
 function createPortableState() {
@@ -3321,6 +3388,71 @@ function createPortableState() {
     ...state,
     log: [],
   };
+}
+
+function recordLeaderboardEarned(amount) {
+  const earned = Number(amount) || 0;
+  if (earned <= 0) return;
+  state.leaderboardPeriods = normalizeLeaderboardPeriods(state.leaderboardPeriods);
+  const today = getDateKey();
+  const week = getWeekKey();
+
+  if (state.leaderboardPeriods.daily.key !== today) {
+    state.leaderboardPeriods.daily = { key: today, earned: 0 };
+  }
+  if (state.leaderboardPeriods.weekly.key !== week) {
+    state.leaderboardPeriods.weekly = { key: week, earned: 0 };
+  }
+
+  state.leaderboardPeriods.daily.earned += earned;
+  state.leaderboardPeriods.weekly.earned += earned;
+}
+
+function normalizeLeaderboardPeriods(periods) {
+  const daily = periods?.daily || {};
+  const weekly = periods?.weekly || {};
+  return {
+    daily: {
+      key: typeof daily.key === "string" ? daily.key : getDateKey(),
+      earned: Math.max(0, Number(daily.earned) || 0),
+    },
+    weekly: {
+      key: typeof weekly.key === "string" ? weekly.key : getWeekKey(),
+      earned: Math.max(0, Number(weekly.earned) || 0),
+    },
+  };
+}
+
+function mergeLeaderboardPeriods(left, right) {
+  const first = normalizeLeaderboardPeriods(left);
+  const second = normalizeLeaderboardPeriods(right);
+  const today = getDateKey();
+  const week = getWeekKey();
+  return {
+    daily: {
+      key: today,
+      earned: Math.max(
+        first.daily.key === today ? first.daily.earned : 0,
+        second.daily.key === today ? second.daily.earned : 0,
+      ),
+    },
+    weekly: {
+      key: week,
+      earned: Math.max(
+        first.weekly.key === week ? first.weekly.earned : 0,
+        second.weekly.key === week ? second.weekly.earned : 0,
+      ),
+    },
+  };
+}
+
+function getWeekKey(date = new Date()) {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = copy.getDay() || 7;
+  copy.setDate(copy.getDate() + 4 - day);
+  const yearStart = new Date(copy.getFullYear(), 0, 1);
+  const week = Math.ceil(((copy - yearStart) / 86400000 + 1) / 7);
+  return `${copy.getFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
 function getSessionWalletAddress(session) {
@@ -3586,6 +3718,7 @@ async function claimDailyQuestReward() {
     quest.claimed = true;
     state.essence += quest.reward;
     state.totalEarned += quest.reward;
+    recordLeaderboardEarned(quest.reward);
     touchProgress();
     addLog(`Onchain Daily Quest claimed. Essence +${format(quest.reward)}.`);
     render();
@@ -3701,6 +3834,7 @@ async function claimOnchainDailyReward() {
     state.dailyStreak = Number(nextStreak);
     state.essence += rewardNumber;
     state.totalEarned += rewardNumber;
+    recordLeaderboardEarned(rewardNumber);
     state.ritualTestnetConnected = true;
     dailyChainStatus.address = address.toLowerCase();
     dailyChainStatus.date = getDateKey();
@@ -3747,7 +3881,8 @@ function isUnknownChainError(error) {
 }
 
 function renderLeaderboard() {
-  const leaderboard = cloudLeaderboard;
+  sortLeaderboard();
+  const leaderboard = cloudLeaderboard.filter((entry) => getLeaderboardEntryScore(entry) > 0);
   const maxPage = getLeaderboardMaxPage();
   leaderboardPage = Math.min(Math.max(0, leaderboardPage), maxPage);
   const startIndex = leaderboardPage * leaderboardPageSize;
@@ -3759,6 +3894,9 @@ function renderLeaderboard() {
   const playerEntry = playerIndex >= 0 ? leaderboard[playerIndex] : null;
   const showPlayerRank = Boolean(playerEntry && (playerIndex < startIndex || playerIndex >= startIndex + leaderboardPageSize));
 
+  nodes.leaderboardModeButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.leaderboardMode === leaderboardMode);
+  });
   nodes.playerRank.textContent = playerIndex >= 0 ? `Rank #${playerIndex + 1}` : `${leaderboard.length} players`;
   nodes.leaderboardList.style.counterReset = `leaderboard ${startIndex}`;
   nodes.leaderboardList.innerHTML = pageLeaders
@@ -3767,14 +3905,14 @@ function renderLeaderboard() {
         <li class="${entry.address?.toLowerCase() === currentAddress ? "is-player" : ""}">
           <span class="leader-avatar">${renderLeaderboardAvatar(entry)}</span>
           <span class="leader-name">${formatLeaderboardName(entry.name)}</span>
-          <strong>${formatEssence(entry.score)}</strong>
+          <strong>${formatEssence(getLeaderboardEntryScore(entry))}</strong>
         </li>
       `,
     )
     .join("");
   nodes.leaderboardPlayerRank.hidden = !showPlayerRank;
   nodes.leaderboardPlayerRank.innerHTML = showPlayerRank
-    ? `<span>Your rank #${playerIndex + 1}</span><strong>${formatEssence(playerEntry.score)}</strong>`
+    ? `<span>Your rank #${playerIndex + 1}</span><strong>${formatEssence(getLeaderboardEntryScore(playerEntry))}</strong>`
     : "";
   nodes.leaderboardPrevButton.disabled = leaderboardPage <= 0;
   nodes.leaderboardNextButton.disabled = leaderboardPage >= maxPage;
@@ -3793,7 +3931,8 @@ function renderLeaderboard() {
 }
 
 function getLeaderboardMaxPage() {
-  return Math.max(0, Math.ceil(cloudLeaderboard.length / leaderboardPageSize) - 1);
+  const visibleCount = cloudLeaderboard.filter((entry) => getLeaderboardEntryScore(entry) > 0).length;
+  return Math.max(0, Math.ceil(visibleCount / leaderboardPageSize) - 1);
 }
 
 function formatLeaderboardName(name) {
@@ -4450,6 +4589,7 @@ function defaultState() {
     dailyLastClaimDate: "",
     dailyStreak: 0,
     dailyQuest: null,
+    leaderboardPeriods: normalizeLeaderboardPeriods(),
     progressUpdatedAt: 0,
     ritualTestnetConnected: false,
     onchainAchievements: {},
@@ -4492,6 +4632,7 @@ function normalizeState(saved) {
     dailyLastClaimDate: typeof saved.dailyLastClaimDate === "string" ? saved.dailyLastClaimDate : base.dailyLastClaimDate,
     dailyStreak: Number.isFinite(saved.dailyStreak) ? saved.dailyStreak : base.dailyStreak,
     dailyQuest: normalizeDailyQuest(saved.dailyQuest),
+    leaderboardPeriods: normalizeLeaderboardPeriods(saved.leaderboardPeriods),
     progressUpdatedAt: Number.isFinite(saved.progressUpdatedAt) ? saved.progressUpdatedAt : base.progressUpdatedAt,
   };
 
@@ -4622,6 +4763,7 @@ function mergeProgressStates(...states) {
     merged.playSeconds = Math.max(merged.playSeconds || 0, next.playSeconds || 0);
     merged.dailyStreak = Math.max(merged.dailyStreak || 0, next.dailyStreak || 0);
     merged.dailyQuest = mergeDailyQuest(merged.dailyQuest, next.dailyQuest);
+    merged.leaderboardPeriods = mergeLeaderboardPeriods(merged.leaderboardPeriods, next.leaderboardPeriods);
     merged.progressUpdatedAt = Math.max(merged.progressUpdatedAt || 0, next.progressUpdatedAt || 0);
     merged.ritualTestnetConnected = merged.ritualTestnetConnected || next.ritualTestnetConnected;
     merged.dailyLastClaimDate = [merged.dailyLastClaimDate, next.dailyLastClaimDate].sort().pop() || "";

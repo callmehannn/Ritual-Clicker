@@ -819,6 +819,36 @@ h2 {
   font-weight: 800;
 }
 
+.leaderboard-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(64, 255, 175, 0.28);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.leaderboard-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-right: 1px solid rgba(64, 255, 175, 0.16);
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.leaderboard-tabs button:last-child {
+  border-right: 0;
+}
+
+.leaderboard-tabs button.is-active {
+  color: #02120b;
+  background: linear-gradient(135deg, var(--bright), #1bd58c);
+}
+
 .leaderboard ol,
 .achievements ol {
   margin: 0;
