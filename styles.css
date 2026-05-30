@@ -208,7 +208,7 @@ h2 {
   overflow-wrap: anywhere;
   color: var(--ink);
   font-family: inherit;
-  font-size: clamp(0.88rem, 2vw, 1.12rem);
+  font-size: clamp(1rem, 2.2vw, 1.28rem);
   line-height: 1;
   font-weight: 900;
   text-transform: uppercase;
@@ -220,7 +220,7 @@ h2 {
 .level-title-row .label {
   margin-bottom: 0;
   color: var(--bright);
-  font-size: clamp(0.88rem, 2vw, 1.12rem);
+  font-size: clamp(1rem, 2.2vw, 1.28rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.04em;
@@ -288,7 +288,7 @@ h2 {
 }
 
 .resource-panel .level-title-row strong {
-  font-size: clamp(0.88rem, 2vw, 1.12rem);
+  font-size: clamp(1rem, 2.2vw, 1.28rem);
   line-height: 1;
 }
 
